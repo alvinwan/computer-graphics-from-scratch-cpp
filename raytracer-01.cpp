@@ -103,8 +103,8 @@ float* intersect_ray_with_sphere(
 
     float discriminant = b * b - 4 * a * c;
     if (discriminant > 0) {
-        out[0] = -b + sqrt(discriminant) / (2 * a);
-        out[1] = -b - sqrt(discriminant) / (2 * a);
+        out[0] = (-b + sqrt(discriminant)) / (2 * a);
+        out[1] = (-b - sqrt(discriminant)) / (2 * a);
     } else {
         out[0] = INF;
         out[1] = INF;
@@ -160,8 +160,6 @@ int32_t main() {
         Sphere({-2.0f, 0, 4.0f}, 1.0f, {0, 255, 0})
     };
 
-    // Fill up the viewport with white pixels. Test that our conversions are
-    // correct, from viewport to canvas.
     uint8_t color[3] = {255, 255, 255};
     for (int32_t x = -width / 2; x < width / 2; x++) {
         for (int32_t y = -height / 2; y < height / 2; y++)
