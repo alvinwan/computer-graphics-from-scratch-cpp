@@ -98,13 +98,15 @@ struct Sphere {
     float center[3];
     float radius;
     float color[3];
+    float specular;
 
     Sphere() {}
 
-    Sphere(const std::initializer_list<float>& c, float r, const std::initializer_list<uint8_t>& col) {
+    Sphere(const std::initializer_list<float>& c, float r, const std::initializer_list<uint8_t>& col, float s) {
         std::copy(c.begin(), c.end(), center);
         radius = r;
         std::copy(col.begin(), col.end(), color);
+        specular = s;
     }
 };
 
@@ -159,7 +161,7 @@ float* intersect_ray_with_sphere(
 }
 
 // Compute lighting for the scene
-float compute_lighting(float point[3], float normal[3], Light lights[3], int32_t num_lights) {
+float compute_lighting(float point[3], float normal[3], float view[3], float specular, Light lights[3], int32_t num_lights) {
     float intensity = 0;
     if (abs(length(normal) - 1.0f) > 0.0001f) {
         std::cerr << "Error: Normal is not length 1 (" << length(normal) << ")" << std::endl;
@@ -178,9 +180,19 @@ float compute_lighting(float point[3], float normal[3], Light lights[3], int32_t
                 vec_l = light.position;
             }
 
+            // Difuse
             float n_dot_l = dot(normal, vec_l);
             if (n_dot_l > 0) {
                 intensity += light.intensity * n_dot_l / (length(vec_l));
+            }
+
+            // Specular
+            if (specular != -1) {
+                float* R = subtract(multiply(dot(normal, vec_l), multiply(2, normal)), vec_l);
+                float r_dot_v = dot(R, view);
+                if (r_dot_v > 0) {
+                    intensity += light.intensity * pow(r_dot_v / (length(R) * length(view)), specular);
+                }
             }
         }
     }
@@ -222,7 +234,7 @@ const uint8_t* trace_ray(
     float* normal = subtract(point, closest_sphere.center);
     normal = multiply(1.0f / length(normal), normal);
 
-    float intensity = compute_lighting(point, normal, lights, num_lights);
+    float intensity = compute_lighting(point, normal, multiply(-1, direction), closest_sphere.specular, lights, num_lights);
     float* raw = multiply(intensity, closest_sphere.color);
     uint8_t* color = raw_to_color(raw);
 
@@ -240,10 +252,10 @@ int32_t main() {
 
     // Define scene
     Sphere spheres[4] = {
-        Sphere({0, -1.0f, 3.0f}, -1.0f, {255, 0, 0}),
-        Sphere({2.0f, 0, 4.0f}, 1.0f, {0, 0, 255}),
-        Sphere({-2.0f, 0, 4.0f}, 1.0f, {0, 255, 0}),
-        Sphere({0, -5001.0f, 0}, 5000.0f, {255, 255, 0})
+        Sphere({0, -1.0f, 3.0f}, -1.0f, {255, 0, 0}, 500.0f),
+        Sphere({2.0f, 0, 4.0f}, 1.0f, {0, 0, 255}, 500.0f),
+        Sphere({-2.0f, 0, 4.0f}, 1.0f, {0, 255, 0}, 10.0f),
+        Sphere({0, -5001.0f, 0}, 5000.0f, {255, 255, 0}, 1000.0f)
     };
     Light lights[3] = {
         Light(AMBIENT, 0.2f, {0, 0, 0}),
