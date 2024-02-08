@@ -10,6 +10,7 @@ g++ raytracer-01.cpp -o raytracer-01.out -std=c++20
 open output.bmp
 ```
 
-This gives the following output.
+This gives the following output, which matches the output from the corresponding
+[demo on the author's website](https://gabrielgambetta.com/computer-graphics-from-scratch/demos/raytracer-01.html).
 
 ![https://i.imgur.com/yEfIoTv.png](https://i.imgur.com/yEfIoTv.png)

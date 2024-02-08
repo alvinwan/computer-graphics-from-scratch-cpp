@@ -133,7 +133,8 @@ const uint8_t* trace_ray(
         return BACKGROUND_COLOR;
     }
 
-    return closest_sphere.color;
+    uint8_t* color = closest_sphere.color;
+    return color;
 }
 
 
