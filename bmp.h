@@ -30,13 +30,8 @@ struct BMPInfoHeader {
 
 #pragma pack(pop)
 
-bool write_bmp_file(const std::string& filename, const std::vector<int32_t>& data, int32_t width, int32_t height) {
-    // Check if the array size matches the image dimensions
-    if (data.size() != width * height) {
-        std::cerr << "Error: Array size does not match image dimensions." << std::endl;
-        return false;
-    }
-
+bool write_bmp_file(const std::string& filename, const uint8_t data[][3], int32_t width, int32_t height) {
+    // Checks that the dimensions are 'safe' for BMP
     if (width % 4 != 0) {
         std::cerr << "Error: Array width (" << width << ") must be divisible by 4." << std::endl;
         return false;
@@ -59,7 +54,7 @@ bool write_bmp_file(const std::string& filename, const std::vector<int32_t>& dat
     info_header.planes = 1;
     info_header.bit_count = 24;   // Assuming 3 bytes per pixel (24-bit color)
     info_header.compression = 0; // No compression
-    info_header.size_image = data.size() * 3;   // Assuming 3 bytes per pixel (24-bit color)
+    info_header.size_image = width * height * 3;   // Assuming 3 bytes per pixel (24-bit color)
     info_header.x_pixels_per_meter = 2835; // Default resolution
     info_header.y_pixels_per_meter = 2835;
     info_header.colors_used = 0;
@@ -79,11 +74,10 @@ bool write_bmp_file(const std::string& filename, const std::vector<int32_t>& dat
     // Write the pixel data
     for (int32_t y = height - 1; y >= 0; y--) {
         for (int32_t x = 0; x < width; x++) {
-            int32_t pixel_value = data[y * width + x];
-            // Assuming the values represent individual color channels (0-255)
-            file.put(pixel_value & 0xff);  // blue
-            file.put((pixel_value >> 8) & 0xff);  // green
-            file.put((pixel_value >> 16) & 0xff); // red
+            const uint8_t* rgb = data[y * width + x];
+            file.put(rgb[2]); // blue
+            file.put(rgb[1]); // green
+            file.put(rgb[0]); // red
         }
     }
 
