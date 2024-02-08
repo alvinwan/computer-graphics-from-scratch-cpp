@@ -180,18 +180,18 @@ float compute_lighting(float point[3], float normal[3], float view[3], float spe
                 vec_l = light.position;
             }
 
-            // Difuse
+            // Diffuse
             float n_dot_l = dot(normal, vec_l);
             if (n_dot_l > 0) {
                 intensity += light.intensity * n_dot_l / (length(vec_l));
             }
 
-            // Specular
+            // Specular, where vec_r is the 'perfect' reflection ray
             if (specular != -1) {
-                float* R = subtract(multiply(dot(normal, vec_l), multiply(2, normal)), vec_l);
-                float r_dot_v = dot(R, view);
+                float* vec_r = subtract(multiply(2 * dot(normal, vec_l), normal), vec_l);
+                float r_dot_v = dot(vec_r, view);
                 if (r_dot_v > 0) {
-                    intensity += light.intensity * pow(r_dot_v / (length(R) * length(view)), specular);
+                    intensity += light.intensity * pow(r_dot_v / (length(vec_r) * length(view)), specular);
                 }
             }
         }
