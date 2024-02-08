@@ -37,6 +37,11 @@ bool write_bmp_file(const std::string& filename, const std::vector<int32_t>& dat
         return false;
     }
 
+    if (width % 4 != 0) {
+        std::cerr << "Error: Array width (" << width << ") must be divisible by 4." << std::endl;
+        return false;
+    }
+
     // Open the file in binary mode
     std::ofstream file(filename, std::ios::binary);
     if (!file.is_open()) {
