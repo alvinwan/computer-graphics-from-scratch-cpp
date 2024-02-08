@@ -168,6 +168,8 @@ float compute_lighting(float point[3], float normal[3], float view[3], float spe
         return INF;
     }
 
+    float length_v = length(view);
+
     for (int i = 0; i < num_lights; i++) {
         Light light = lights[i];
         if (light.ltype == AMBIENT) {
@@ -191,7 +193,7 @@ float compute_lighting(float point[3], float normal[3], float view[3], float spe
                 float* vec_r = subtract(multiply(2 * dot(normal, vec_l), normal), vec_l);
                 float r_dot_v = dot(vec_r, view);
                 if (r_dot_v > 0) {
-                    intensity += light.intensity * pow(r_dot_v / (length(vec_r) * length(view)), specular);
+                    intensity += light.intensity * pow(r_dot_v / (length(vec_r) * length_v), specular);
                 }
             }
         }
