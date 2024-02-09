@@ -80,7 +80,6 @@ float3 canvas_to_viewport(int32_t x, int32_t y, int32_t width, int32_t height) {
     return { (float) x / width, (float) y / height, 1 };
 }
 
-
 // Computes intersection of ray with spheres. Returns solutions in terms of
 // line parameter t.
 std::array<float, 2> intersect_ray_with_sphere(
@@ -134,7 +133,6 @@ rgb trace_ray(
     rgb color = closest_sphere.color;
     return color;
 }
-
 
 int32_t main() {
     int32_t width = 600;
