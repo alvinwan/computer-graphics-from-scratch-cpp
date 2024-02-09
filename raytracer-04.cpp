@@ -18,6 +18,7 @@ Implementation for https://gabrielgambetta.com/computer-graphics-from-scratch/de
 typedef std::array<float, 3> float3;
 typedef std::array<uint8_t, 3> rgb;
 const float3 BACKGROUND_COLOR = {255, 255, 255};
+const float EPSILON = 0.0001f;
 
 // Canvas
 
@@ -207,7 +208,7 @@ float compute_lighting(float3 point, float3 normal, float3 view, float specular,
             }
 
             // Shadow check
-            std::tuple<Sphere, float> intersection = closest_intersection(point, vec_l, 0.0001, shadow_t_max, scene);
+            std::tuple<Sphere, float> intersection = closest_intersection(point, vec_l, EPSILON, shadow_t_max, scene);
             if (std::get<1>(intersection) != INFINITY) continue;
 
             // Diffuse

@@ -17,7 +17,8 @@ Implementation for https://gabrielgambetta.com/computer-graphics-from-scratch/de
 
 typedef std::array<float, 3> float3;
 typedef std::array<uint8_t, 3> rgb;
-const float3 BACKGROUND_COLOR = {255, 255, 255};
+const float3 BACKGROUND_COLOR = {0, 0, 0};
+const float EPSILON = 0.001f;
 
 // Canvas
 
@@ -89,14 +90,16 @@ struct Sphere {
     float radius;
     float3 color;
     float specular;
+    float reflective;
 
     Sphere() {}
 
-    Sphere(const float3& v_center, float v_radius, const float3& v_color, float v_specular) {
+    Sphere(const float3& v_center, float v_radius, const float3& v_color, float v_specular, float v_reflective) {
         center = v_center;
         radius = v_radius;
         color = v_color;
         specular = v_specular;
+        reflective = v_reflective;
     }
 };
 
@@ -180,6 +183,11 @@ std::tuple<Sphere, float> closest_intersection(
     return std::make_tuple(closest_sphere, closest_t);
 }
 
+// Compute the reflection of a ray on a surface defined by its normal
+float3 reflect_ray(float3 ray, float3 normal) {
+    return subtract(multiply(2 * dot(ray, normal), normal), ray);
+}
+
 // Compute lighting for the scene
 float compute_lighting(float3 point, float3 normal, float3 view, float specular, Scene scene) {
     float intensity = 0;
@@ -207,7 +215,7 @@ float compute_lighting(float3 point, float3 normal, float3 view, float specular,
             }
 
             // Shadow check
-            std::tuple<Sphere, float> intersection = closest_intersection(point, vec_l, 0.0001, shadow_t_max, scene);
+            std::tuple<Sphere, float> intersection = closest_intersection(point, vec_l, EPSILON, shadow_t_max, scene);
             if (std::get<1>(intersection) != INFINITY) continue;
 
             // Diffuse
@@ -218,7 +226,7 @@ float compute_lighting(float3 point, float3 normal, float3 view, float specular,
 
             // Specular, where vec_r is the 'perfect' reflection ray
             if (specular != -1) {
-                float3 vec_r = subtract(multiply(2 * dot(normal, vec_l), normal), vec_l);
+                float3 vec_r = reflect_ray(vec_l, normal);
                 float r_dot_v = dot(vec_r, view);
                 if (r_dot_v > 0) {
                     intensity += light.intensity * pow(r_dot_v / (length(vec_r) * length_v), specular);
@@ -236,6 +244,7 @@ float3 trace_ray(
     float3 direction,
     float min_t,
     float max_t,
+    int32_t recursion_depth,
     Scene scene
 ) {
     std::tuple<Sphere, float> intersection = closest_intersection(origin, direction, min_t, max_t, scene);
@@ -251,7 +260,19 @@ float3 trace_ray(
     normal = multiply(1.0f / length(normal), normal);
 
     float intensity = compute_lighting(point, normal, multiply(-1, direction), closest_sphere.specular, scene);
-    return multiply(intensity, closest_sphere.color);
+    float3 local_color = multiply(intensity, closest_sphere.color);
+
+    // If we hit the recursion limit or the sphere is not reflective, finish
+    float reflective = closest_sphere.reflective;
+    if (recursion_depth <= 0 || reflective <= 0.0f) {
+        return local_color;
+    }
+
+    // Compute the reflected color
+    float3 reflected_ray = reflect_ray(multiply(-1.0f, direction), normal);
+    const float3 reflected_color = trace_ray(point, reflected_ray, EPSILON, INFINITY, recursion_depth - 1, scene);
+
+    return add(multiply(1.0f - reflective, local_color), multiply(reflective, reflected_color));
 }
 
 
@@ -265,10 +286,10 @@ int32_t main() {
 
     // Define scene
     std::vector<Sphere> spheres = {
-        Sphere({0, -1.0f, 3.0f}, -1.0f, {255, 0, 0}, 500.0f),
-        Sphere({2.0f, 0, 4.0f}, 1.0f, {0, 0, 255}, 500.0f),
-        Sphere({-2.0f, 0, 4.0f}, 1.0f, {0, 255, 0}, 10.0f),
-        Sphere({0, -5001.0f, 0}, 5000.0f, {255, 255, 0}, 1000.0f)
+        Sphere({0, -1.0f, 3.0f}, -1.0f, {255, 0, 0}, 500.0f, 0.2f),
+        Sphere({2.0f, 0, 4.0f}, 1.0f, {0, 0, 255}, 500.0f, 0.3f),
+        Sphere({-2.0f, 0, 4.0f}, 1.0f, {0, 255, 0}, 10.0f, 0.4f),
+        Sphere({0, -5001.0f, 0}, 5000.0f, {255, 255, 0}, 1000.0f, 0.5f)
     };
     std::vector<Light> lights = {
         Light(AMBIENT, 0.2f, {0, 0, 0}),
@@ -281,7 +302,7 @@ int32_t main() {
         for (int32_t y = -height / 2; y < height / 2; y++)
         {
             float3 direction = canvas_to_viewport(x, y, width, height);
-            float3 color = trace_ray(camera, direction, 1.0f, INFINITY, scene);
+            float3 color = trace_ray(camera, direction, 1.0f, INFINITY, 3, scene);
             put_pixel(data, width, height, x, y, clamp(color));
         }
     }
