@@ -1,7 +1,7 @@
 /*
 Raycast 02
 ==========
-Adds lighting
+Adds lighting on diffuse material
 
 ```bash
 g++ raytracer-02.cpp -o main.out -std=c++20

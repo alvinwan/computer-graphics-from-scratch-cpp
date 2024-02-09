@@ -1,15 +1,15 @@
 /*
-Raycast 02
+Raycast 04
 ==========
-Adds lighting
+Adds shadows
 
 ```bash
-g++ raytracer-02.cpp -o main.out -std=c++20
+g++ raytracer-04.cpp -o main.out -std=c++20
 ./main.out
 open output.bmp
 ```
 
-Implementation for https://gabrielgambetta.com/computer-graphics-from-scratch/03-light.html
+Implementation for https://gabrielgambetta.com/computer-graphics-from-scratch/demos/raytracer-04.html
 */
 #include "bmp.h"
 #include <math.h>

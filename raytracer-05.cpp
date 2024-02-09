@@ -1,15 +1,15 @@
 /*
-Raycast 03
+Raycast 05
 ==========
-Adds specular reflections
+Adds reflections
 
 ```bash
-g++ raytracer-03.cpp -o main.out -std=c++20
+g++ raytracer-05.cpp -o main.out -std=c++20
 ./main.out
 open output.bmp
 ```
 
-Implementation for https://gabrielgambetta.com/computer-graphics-from-scratch/03-light.html
+Implementation for https://gabrielgambetta.com/computer-graphics-from-scratch/demos/raytracer-05.html
 */
 #include "bmp.h"
 #include <math.h>
@@ -160,8 +160,44 @@ float* intersect_ray_with_sphere(
     return out;
 }
 
+// Find the closest intersection between a ray and the spheres in the scene.
+std::tuple<Sphere, float> closest_intersection(
+    float origin[3],
+    float direction[3],
+    float min_t,
+    float max_t,
+    Sphere spheres[],
+    int32_t num_spheres
+) {
+    float closest_t = INF;
+    Sphere closest_sphere;
+
+    for (int i = 0; i < num_spheres; i++) {
+        float* ts = intersect_ray_with_sphere(origin, direction, spheres[i]);
+        if (ts[0] < closest_t && min_t < ts[0] && ts[0] < max_t) {
+            closest_t = ts[0];
+            closest_sphere = spheres[i];
+        }
+        if (ts[1] < closest_t && min_t < ts[1] && ts[1] < max_t) {
+            closest_t = ts[1];
+            closest_sphere = spheres[i];
+        }
+    }
+
+    return std::make_tuple(closest_sphere, closest_t);
+}
+
 // Compute lighting for the scene
-float compute_lighting(float point[3], float normal[3], float view[3], float specular, Light lights[3], int32_t num_lights) {
+float compute_lighting(
+    float point[3],
+    float normal[3],
+    float view[3],
+    float specular,
+    Sphere spheres[],
+    int32_t num_spheres,
+    Light lights[],
+    int32_t num_lights
+) {
     float intensity = 0;
     if (abs(length(normal) - 1.0f) > 0.0001f) {
         std::cerr << "Error: Normal is not length 1 (" << length(normal) << ")" << std::endl;
@@ -176,11 +212,18 @@ float compute_lighting(float point[3], float normal[3], float view[3], float spe
             intensity += light.intensity;
         } else {
             float* vec_l;
+            float shadow_t_max;
             if (light.ltype == POINT) {
                 vec_l = subtract(light.position, point);
+                shadow_t_max = 1.0f;
             } else {  // Light.DIRECTIONAL
                 vec_l = light.position;
+                shadow_t_max = INF;
             }
+
+            // Shadow check
+            std::tuple<Sphere, float> intersection = closest_intersection(point, vec_l, 0.0001, shadow_t_max, spheres, num_spheres);
+            if (std::get<1>(intersection) != INF) continue;
 
             // Diffuse
             float n_dot_l = dot(normal, vec_l);
@@ -213,20 +256,9 @@ const uint8_t* trace_ray(
     Light lights[],
     int32_t num_lights
 ) {
-    float closest_t = INF;
-    Sphere closest_sphere;
-
-    for (int i = 0; i < num_spheres; i++) {
-        float* ts = intersect_ray_with_sphere(origin, direction, spheres[i]);
-        if (ts[0] < closest_t && min_t < ts[0] && ts[0] < max_t) {
-            closest_t = ts[0];
-            closest_sphere = spheres[i];
-        }
-        if (ts[1] < closest_t && min_t < ts[1] && ts[1] < max_t) {
-            closest_t = ts[1];
-            closest_sphere = spheres[i];
-        }
-    }
+    std::tuple<Sphere, float> intersection = closest_intersection(origin, direction, min_t, max_t, spheres, num_spheres);
+    Sphere closest_sphere = std::get<0>(intersection);
+    float closest_t = std::get<1>(intersection);
 
     if (closest_t == INF) {
         return BACKGROUND_COLOR;
@@ -236,7 +268,7 @@ const uint8_t* trace_ray(
     float* normal = subtract(point, closest_sphere.center);
     normal = multiply(1.0f / length(normal), normal);
 
-    float intensity = compute_lighting(point, normal, multiply(-1, direction), closest_sphere.specular, lights, num_lights);
+    float intensity = compute_lighting(point, normal, multiply(-1, direction), closest_sphere.specular, spheres, num_spheres, lights, num_lights);
     float* raw = multiply(intensity, closest_sphere.color);
     uint8_t* color = raw_to_color(raw);
 
