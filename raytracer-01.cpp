@@ -83,7 +83,7 @@ float3 canvas_to_viewport(int32_t x, int32_t y, int32_t width, int32_t height) {
 
 // Computes intersection of ray with spheres. Returns solutions in terms of
 // line parameter t.
-std::tuple<float, float> intersect_ray_with_sphere(
+std::array<float, 2> intersect_ray_with_sphere(
     float3 origin,
     float3 direction,
     Sphere sphere
@@ -96,12 +96,12 @@ std::tuple<float, float> intersect_ray_with_sphere(
 
     float discriminant = b * b - 4 * a * c;
     if (discriminant > 0) {
-        return std::make_tuple(
+        return {
             (-b + sqrt(discriminant)) / (2 * a),
             (-b - sqrt(discriminant)) / (2 * a)
-        );
+        };
     }
-    return std::make_tuple(INFINITY, INFINITY);
+    return {INFINITY, INFINITY};
 }
 
 // Traces a ray against the spheres in the scene
@@ -110,22 +110,19 @@ rgb trace_ray(
     float3 direction,
     float min_t,
     float max_t,
-    Sphere spheres[],
-    int32_t num_spheres
+    std::vector<Sphere> spheres
 ) {
     float closest_t = INFINITY;
     Sphere closest_sphere;
 
-    for (int i = 0; i < num_spheres; i++) {
-        std::tuple<float, float> ts = intersect_ray_with_sphere(origin, direction, spheres[i]);
-        float t0 = std::get<0>(ts);
-        float t1 = std::get<1>(ts);
-        if (t0 < closest_t && min_t < t0 && t0 < max_t) {
-            closest_t = t0;
+    for (int i = 0; i < spheres.size(); i++) {
+        std::array<float, 2> ts = intersect_ray_with_sphere(origin, direction, spheres[i]);
+        if (ts[0] < closest_t && min_t < ts[0] && ts[0] < max_t) {
+            closest_t = ts[0];
             closest_sphere = spheres[i];
         }
-        if (t1 < closest_t && min_t < t1 && t1 < max_t) {
-            closest_t = t1;
+        if (ts[1] < closest_t && min_t < ts[1] && ts[1] < max_t) {
+            closest_t = ts[1];
             closest_sphere = spheres[i];
         }
     }
@@ -148,7 +145,7 @@ int32_t main() {
     float3 camera = {0, 0, 0};
 
     // Define scene
-    Sphere spheres[3] = {
+    std::vector<Sphere> spheres = {
         Sphere({0, -1.0f, 3.0f}, -1.0f, {255, 0, 0}),
         Sphere({2.0f, 0, 4.0f}, 1.0f, {0, 0, 255}),
         Sphere({-2.0f, 0, 4.0f}, 1.0f, {0, 255, 0})
@@ -158,7 +155,7 @@ int32_t main() {
         for (int32_t y = -height / 2; y < height / 2; y++)
         {
             float3 direction = canvas_to_viewport(x, y, width, height);
-            rgb color = trace_ray(camera, direction, 1.0f, INFINITY, spheres, 3);
+            rgb color = trace_ray(camera, direction, 1.0f, INFINITY, spheres);
             put_pixel(data, width, height, x, y, color);
         }
     }
