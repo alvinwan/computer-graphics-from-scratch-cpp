@@ -88,13 +88,15 @@ struct Sphere {
     float3 center;
     float radius;
     float3 color;
+    float specular;
 
     Sphere() {}
 
-    Sphere(const float3& v_center, float v_radius, const float3& v_color) {
+    Sphere(const float3& v_center, float v_radius, const float3& v_color, float v_specular) {
         center = v_center;
         radius = v_radius;
         color = v_color;
+        specular = v_specular;
     }
 };
 
@@ -153,15 +155,17 @@ std::array<float, 2> intersect_ray_with_sphere(
 }
 
 // Compute lighting for the scene
-float compute_lighting(float3 point, float3 normal, std::vector<Light> lights) {
+float compute_lighting(float3 point, float3 normal, float3 view, float specular, Scene scene) {
     float intensity = 0;
     if (abs(length(normal) - 1.0f) > 0.0001f) {
         std::cerr << "Error: Normal is not length 1 (" << length(normal) << ")" << std::endl;
         return INFINITY;
     }
 
-    for (int i = 0; i < lights.size(); i++) {
-        Light light = lights[i];
+    float length_v = length(view);
+
+    for (int i = 0; i < scene.lights.size(); i++) {
+        Light light = scene.lights[i];
         if (light.ltype == AMBIENT) {
             intensity += light.intensity;
         } else {
@@ -172,9 +176,19 @@ float compute_lighting(float3 point, float3 normal, std::vector<Light> lights) {
                 vec_l = light.position;
             }
 
+            // Diffuse
             float n_dot_l = dot(normal, vec_l);
             if (n_dot_l > 0) {
                 intensity += light.intensity * n_dot_l / (length(vec_l));
+            }
+
+            // Specular, where vec_r is the 'perfect' reflection ray
+            if (specular != -1) {
+                float3 vec_r = subtract(multiply(2 * dot(normal, vec_l), normal), vec_l);
+                float r_dot_v = dot(vec_r, view);
+                if (r_dot_v > 0) {
+                    intensity += light.intensity * pow(r_dot_v / (length(vec_r) * length_v), specular);
+                }
             }
         }
     }
@@ -213,7 +227,7 @@ float3 trace_ray(
     float3 normal = subtract(point, closest_sphere.center);
     normal = multiply(1.0f / length(normal), normal);
 
-    float intensity = compute_lighting(point, normal, scene.lights);
+    float intensity = compute_lighting(point, normal, multiply(-1, direction), closest_sphere.specular, scene);
     return multiply(intensity, closest_sphere.color);
 }
 
@@ -228,10 +242,10 @@ int32_t main() {
 
     // Define scene
     std::vector<Sphere> spheres = {
-        Sphere({0, -1.0f, 3.0f}, -1.0f, {255, 0, 0}),
-        Sphere({2.0f, 0, 4.0f}, 1.0f, {0, 0, 255}),
-        Sphere({-2.0f, 0, 4.0f}, 1.0f, {0, 255, 0}),
-        Sphere({0, -5001.0f, 0}, 5000.0f, {255, 255, 0})
+        Sphere({0, -1.0f, 3.0f}, -1.0f, {255, 0, 0}, 500.0f),
+        Sphere({2.0f, 0, 4.0f}, 1.0f, {0, 0, 255}, 500.0f),
+        Sphere({-2.0f, 0, 4.0f}, 1.0f, {0, 255, 0}, 10.0f),
+        Sphere({0, -5001.0f, 0}, 5000.0f, {255, 255, 0}, 1000.0f)
     };
     std::vector<Light> lights = {
         Light(AMBIENT, 0.2f, {0, 0, 0}),
