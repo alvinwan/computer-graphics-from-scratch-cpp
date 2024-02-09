@@ -15,7 +15,8 @@ Implementation for https://gabrielgambetta.com/computer-graphics-from-scratch/de
 #include <math.h>
 
 const float INF = std::numeric_limits<float>::infinity();
-const uint8_t BACKGROUND_COLOR[3] = {255, 255, 255};
+const float BACKGROUND_COLOR[3] = {0.0f, 0.0f, 0.0f};
+const float EPSILON = 0.0001f;
 
 // Canvas
 
@@ -58,7 +59,7 @@ float length(float vec[3]) {
 }
 
 // Broadcasted multiply between vector and scalar
-float* multiply(float k, float vec[3]) {
+float* multiply(float k, const float vec[3]) {
     float* point = new float[3];
     point[0] = k * vec[0];
     point[1] = k * vec[1];
@@ -84,12 +85,12 @@ float* subtract(float v1[3], float v2[3]) {
     return point;
 }
 
-uint8_t* raw_to_color(float vec[3]) {
-    uint8_t* color = new uint8_t[3];
-    color[0] = (uint8_t) std::round(std::clamp<float>(vec[0], 0.0f, 255.0f));
-    color[1] = (uint8_t) std::round(std::clamp<float>(vec[1], 0.0f, 255.0f));
-    color[2] = (uint8_t) std::round(std::clamp<float>(vec[2], 0.0f, 255.0f));
-    return color;
+uint8_t* raw_to_color(const float vec[3]) {
+    uint8_t* point = new uint8_t[3];
+    point[0] = (uint8_t) std::round(std::clamp<float>(vec[0], 0.0f, 255.0f));
+    point[1] = (uint8_t) std::round(std::clamp<float>(vec[1], 0.0f, 255.0f));
+    point[2] = (uint8_t) std::round(std::clamp<float>(vec[2], 0.0f, 255.0f));
+    return point;
 }
 
 // Ray tracing
@@ -99,14 +100,16 @@ struct Sphere {
     float radius;
     float color[3];
     float specular;
+    float reflective;
 
     Sphere() {}
 
-    Sphere(const std::initializer_list<float>& c, float r, const std::initializer_list<uint8_t>& col, float s) {
+    Sphere(const std::initializer_list<float>& c, float r, const std::initializer_list<uint8_t>& col, float s, float ref) {
         std::copy(c.begin(), c.end(), center);
         radius = r;
         std::copy(col.begin(), col.end(), color);
         specular = s;
+        reflective = ref;
     }
 };
 
@@ -187,6 +190,11 @@ std::tuple<Sphere, float> closest_intersection(
     return std::make_tuple(closest_sphere, closest_t);
 }
 
+// Compute the reflection of a ray on a surface defined by its normal
+float* reflect_ray(float ray[3], float normal[3]) {
+    return subtract(multiply(2 * dot(ray, normal), normal), ray);
+}
+
 // Compute lighting for the scene
 float compute_lighting(
     float point[3],
@@ -222,7 +230,7 @@ float compute_lighting(
             }
 
             // Shadow check
-            std::tuple<Sphere, float> intersection = closest_intersection(point, vec_l, 0.0001, shadow_t_max, spheres, num_spheres);
+            std::tuple<Sphere, float> intersection = closest_intersection(point, vec_l, EPSILON, shadow_t_max, spheres, num_spheres);
             if (std::get<1>(intersection) != INF) continue;
 
             // Diffuse
@@ -233,7 +241,7 @@ float compute_lighting(
 
             // Specular, where vec_r is the 'perfect' reflection ray
             if (specular != -1) {
-                float* vec_r = subtract(multiply(2 * dot(normal, vec_l), normal), vec_l);
+                float* vec_r = reflect_ray(vec_l, normal);
                 float r_dot_v = dot(vec_r, view);
                 if (r_dot_v > 0) {
                     intensity += light.intensity * pow(r_dot_v / (length(vec_r) * length_v), specular);
@@ -246,11 +254,12 @@ float compute_lighting(
 }
 
 // Traces a ray against the spheres in the scene
-const uint8_t* trace_ray(
+const float* trace_ray(
     float origin[3],
     float direction[3],
     float min_t,
     float max_t,
+    int32_t recursion_depth,
     Sphere spheres[],
     int32_t num_spheres,
     Light lights[],
@@ -269,10 +278,19 @@ const uint8_t* trace_ray(
     normal = multiply(1.0f / length(normal), normal);
 
     float intensity = compute_lighting(point, normal, multiply(-1, direction), closest_sphere.specular, spheres, num_spheres, lights, num_lights);
-    float* raw = multiply(intensity, closest_sphere.color);
-    uint8_t* color = raw_to_color(raw);
+    float* color = multiply(intensity, closest_sphere.color);
 
-    return color;
+    // If we hit the recursion limit or the sphere is not reflective, finish
+    float reflective = closest_sphere.reflective;
+    if (recursion_depth <= 0 || reflective <= 0.0f) {
+        return color;
+    }
+
+    // Compute the reflected color
+    float* reflected_ray = reflect_ray(multiply(-1.0f, direction), normal);
+    const float* reflected_color = trace_ray(point, reflected_ray, EPSILON, INF, recursion_depth - 1, spheres, num_spheres, lights, num_lights);
+
+    return add(multiply(1.0f - reflective, color), multiply(reflective, reflected_color));
 }
 
 
@@ -286,10 +304,10 @@ int32_t main() {
 
     // Define scene
     Sphere spheres[4] = {
-        Sphere({0, -1.0f, 3.0f}, -1.0f, {255, 0, 0}, 500.0f),
-        Sphere({2.0f, 0, 4.0f}, 1.0f, {0, 0, 255}, 500.0f),
-        Sphere({-2.0f, 0, 4.0f}, 1.0f, {0, 255, 0}, 10.0f),
-        Sphere({0, -5001.0f, 0}, 5000.0f, {255, 255, 0}, 1000.0f)
+        Sphere({0, -1.0f, 3.0f}, -1.0f, {255, 0, 0}, 500.0f, 0.2f),
+        Sphere({2.0f, 0, 4.0f}, 1.0f, {0, 0, 255}, 500.0f, 0.3f),
+        Sphere({-2.0f, 0, 4.0f}, 1.0f, {0, 255, 0}, 10.0f, 0.4f),
+        Sphere({0, -5001.0f, 0}, 5000.0f, {255, 255, 0}, 1000.0f, 0.5f)
     };
     Light lights[3] = {
         Light(AMBIENT, 0.2f, {0, 0, 0}),
@@ -302,7 +320,7 @@ int32_t main() {
         for (int32_t y = -height / 2; y < height / 2; y++)
         {
             float* direction = canvas_to_viewport(x, y, width, height);
-            const uint8_t* color = trace_ray(camera, direction, 1.0f, INF, spheres, 4, lights, 3);
+            const uint8_t* color = raw_to_color(trace_ray(camera, direction, 1.0f, INF, 3, spheres, 4, lights, 3));
             put_pixel(data, width, height, x, y, color);
         }
     }
