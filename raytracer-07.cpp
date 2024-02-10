@@ -99,21 +99,30 @@ rgb clamp(double3 vec) {
 
 // Ray tracing
 
-struct Sphere {
-    double3 center;
-    double radius;
+struct Object {
     double3 color;
     double specular;
     double reflective;
 
-    Sphere() {}
+    Object() {}
 
-    Sphere(const double3& v_center, double v_radius, const double3& v_color, double v_specular, double v_reflective) {
-        center = v_center;
-        radius = v_radius;
+    Object(const double3& v_color, double v_specular, double v_reflective) {
         color = v_color;
         specular = v_specular;
         reflective = v_reflective;
+    }
+};
+
+struct Sphere : Object {
+    double3 center;
+    double radius;
+
+    Sphere() {}
+
+    Sphere(const double3& v_center, double v_radius, const double3& v_color, double v_specular, double v_reflective)
+    : Object(v_color, v_specular, v_reflective) {
+        center = v_center;
+        radius = v_radius;
     }
 };
 
@@ -181,8 +190,27 @@ std::array<double, 2> intersect_ray_with_sphere(
     return {INFINITY, INFINITY};
 }
 
+// Holds intersection information for a raycast
+struct Intersection {
+    Object object;
+    double3 point;
+    double3 normal;
+    bool is_valid;
+
+    Intersection() {
+        is_valid = false;
+    }
+
+    Intersection(Object v_object, double3 v_point, double3 v_normal) {
+        object = v_object;
+        point = v_point;
+        normal = v_normal;
+        is_valid = true;
+    }
+};
+
 // Find the closest intersection between a ray and the spheres in the scene.
-std::tuple<Sphere, double> closest_intersection(
+Intersection closest_intersection(
     double3 origin,
     double3 direction,
     double min_t,
@@ -202,7 +230,16 @@ std::tuple<Sphere, double> closest_intersection(
         }
     }
 
-    return std::make_tuple(closest_sphere, closest_t);
+    if (closest_t != INFINITY) {
+        double3 point = add(origin, multiply(closest_t, direction));
+        double3 normal = subtract(point, closest_sphere.center);
+        normal = multiply(1.0f / length(normal), normal);
+        // sets is_valid = true implicitly
+        return Intersection(closest_sphere, point, normal);
+    } else {
+        // sets is_valid = false implicitly
+        return Intersection();
+    }
 }
 
 // Compute the reflection of a ray on a surface defined by its normal
@@ -237,8 +274,8 @@ double compute_lighting(double3 point, double3 normal, double3 view, double spec
             }
 
             // Shadow check
-            std::tuple<Sphere, double> intersection = closest_intersection(point, vec_l, EPSILON, shadow_t_max, scene);
-            if (std::get<1>(intersection) != INFINITY) continue;
+            Intersection intersection = closest_intersection(point, vec_l, EPSILON, shadow_t_max, scene);
+            if (intersection.is_valid) continue;
 
             // Diffuse
             double n_dot_l = dot(normal, vec_l);
@@ -269,30 +306,28 @@ double3 trace_ray(
     int32_t recursion_depth,
     Scene scene
 ) {
-    std::tuple<Sphere, double> intersection = closest_intersection(origin, direction, min_t, max_t, scene);
-    Sphere closest_sphere = std::get<0>(intersection);
-    double closest_t = std::get<1>(intersection);
-
-    if (closest_t == INFINITY) {
+    Intersection intersection = closest_intersection(origin, direction, min_t, max_t, scene);
+    if (!intersection.is_valid) {
         return BACKGROUND_COLOR;
     }
 
-    double3 point = add(origin, multiply(closest_t, direction));
-    double3 normal = subtract(point, closest_sphere.center);
-    normal = multiply(1.0f / length(normal), normal);
-
-    double intensity = compute_lighting(point, normal, multiply(-1, direction), closest_sphere.specular, scene);
-    double3 local_color = multiply(intensity, closest_sphere.color);
+    double intensity = compute_lighting(
+        intersection.point,
+        intersection.normal,
+        multiply(-1, direction),
+        intersection.object.specular,
+        scene);
+    double3 local_color = multiply(intensity, intersection.object.color);
 
     // If we hit the recursion limit or the sphere is not reflective, finish
-    double reflective = closest_sphere.reflective;
+    double reflective = intersection.object.reflective;
     if (recursion_depth <= 0 || reflective <= 0.0f) {
         return local_color;
     }
 
     // Compute the reflected color
-    double3 reflected_ray = reflect_ray(multiply(-1.0f, direction), normal);
-    const double3 reflected_color = trace_ray(point, reflected_ray, EPSILON, INFINITY, recursion_depth - 1, scene);
+    double3 reflected_ray = reflect_ray(multiply(-1.0f, direction), intersection.normal);
+    const double3 reflected_color = trace_ray(intersection.point, reflected_ray, EPSILON, INFINITY, recursion_depth - 1, scene);
 
     return add(multiply(1.0f - reflective, local_color), multiply(reflective, reflected_color));
 }
