@@ -1,11 +1,11 @@
 /*
-Raycast 07
-==========
+Raycast 07 - Triangles
+======================
 Adds support for triangle primitives to the last demo that "Computer Graphics
 from Scratch" has an implementation for (Raytracer 06).
 
 ```bash
-g++ raytracer-07.cpp -o main.out -std=c++20
+g++ raytracer-07-triangles.cpp -o main.out -std=c++20
 ./main.out
 open output.bmp
 ```
