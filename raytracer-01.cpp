@@ -9,7 +9,7 @@ g++ raytracer-01.cpp -o main.out -std=c++20
 open output.bmp
 ```
 
-Implementation for https://gabrielgambetta.com/computer-graphics-from-scratch/02-basic-raytracing.html
+Implementation for https://gabrielgambetta.com/computer-graphics-from-scratch/demos/raytracer-01.html
 */
 #include "bmp.h"
 #include <math.h>
