@@ -194,13 +194,11 @@ std::tuple<Sphere, double> closest_intersection(
 
     for (int i = 0; i < scene.spheres.size(); i++) {
         std::array<double, 2> ts = intersect_ray_with_sphere(origin, direction, scene.spheres[i]);
-        if (ts[0] < closest_t && min_t < ts[0] && ts[0] < max_t) {
-            closest_t = ts[0];
-            closest_sphere = scene.spheres[i];
-        }
-        if (ts[1] < closest_t && min_t < ts[1] && ts[1] < max_t) {
-            closest_t = ts[1];
-            closest_sphere = scene.spheres[i];
+        for (int j = 0; j < 2; j++) {
+            if (ts[j] < closest_t && min_t < ts[j] && ts[j] < max_t) {
+                closest_t = ts[j];
+                closest_sphere = scene.spheres[i];
+            }
         }
     }
 
