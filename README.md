@@ -1,5 +1,7 @@
 # "Computer Graphics from Scratch" in C++
-C++ implementation of demos from "Computer Graphics from Scratch"
+C++ implementation of demos from "Computer Graphics from Scratch".
+*Additionally* provides implementations for the "Extending the *" sections,
+which didn't previously have implementations.
 
 To get started, pick any demo script to build. For example, the first demo for
 raycasting is in `raytracer-01.cpp`. To build and run it, use the following
