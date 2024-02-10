@@ -1,16 +1,18 @@
 /*
 Raycast 07
 ==========
-Adds support for triangle primitives
+Adds support for triangle primitives to the last demo that "Computer Graphics
+from Scratch" has an implementation for (Raytracer 06).
 
 ```bash
-g++ raytracer-06.cpp -o main.out -std=c++20
+g++ raytracer-07.cpp -o main.out -std=c++20
 ./main.out
 open output.bmp
 ```
 
-There is no reference Javascript implementations, but you can the original
-description of the algorithm in the "Extending the Raytracer" chapter:
+The original "Computer Graphics from Scratch" book doesn't contain a demo for
+this additional functionality. The original description of the algorithm is in
+the "Extending the Raytracer" chapter:
 https://gabrielgambetta.com/computer-graphics-from-scratch/05-extending-the-raytracer.html#other-primitives
 */
 #include "bmp.h"
