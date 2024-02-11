@@ -110,21 +110,17 @@ rgb clamp(double3 vec) {
 
 // Ray tracing
 
-enum Shape { SPHERE, TRIANGLE, PLANE };
-
 struct Object {
-    Shape shape;
     double3 color;
     double specular;
     double reflective;
 
     Object() {}
 
-    Object(const double3& v_color, double v_specular, double v_reflective, Shape v_shape) {
+    Object(const double3& v_color, double v_specular, double v_reflective) {
         color = v_color;
         specular = v_specular;
         reflective = v_reflective;
-        shape = v_shape;
     }
 
     // Computes intersection of a ray with object. Returns solution in terms of
@@ -137,6 +133,10 @@ struct Object {
     virtual double3 get_normal_of(double3 point) {
         return {0, 0, 0};
     }
+
+    virtual bool has_point(double3 point) {
+        return false;
+    }
 };
 
 struct Sphere : Object {
@@ -146,7 +146,7 @@ struct Sphere : Object {
     Sphere() {}
 
     Sphere(const double3& v_center, double v_radius, const double3& v_color, double v_specular, double v_reflective)
-    : Object(v_color, v_specular, v_reflective, SPHERE) {
+    : Object(v_color, v_specular, v_reflective) {
         center = v_center;
         radius = v_radius;
     }
@@ -162,10 +162,9 @@ struct Sphere : Object {
 
         double discriminant = b * b - 4 * a * c;
         if (discriminant >= 0) {
-            return {
-                (-b + sqrt(discriminant)) / (2 * a),
-                (-b - sqrt(discriminant)) / (2 * a)
-            };
+            double t0 = (-b + sqrt(discriminant)) / (2 * a);
+            double t1 = (-b - sqrt(discriminant)) / (2 * a);
+            return {std::min(t0, t1), std::max(t0, t1)};
         }
         return {INFINITY, INFINITY};
     }
@@ -174,6 +173,10 @@ struct Sphere : Object {
         double3 normal = subtract(point, center);
         normal = multiply(1.0f / length(normal), normal);
         return normal;
+    }
+
+    bool has_point(double3 point) {
+        return std::abs(length(subtract(point, center)) - radius) < EPSILON;
     }
 };
 
@@ -184,7 +187,7 @@ struct Plane : Object {
     Plane() {}
 
     Plane(double3 v_normal, double v_distance, const double3& v_color, double v_specular, double v_reflective)
-    : Object(v_color, v_specular, v_reflective, PLANE) {
+    : Object(v_color, v_specular, v_reflective) {
         normal = v_normal;
         distance = v_distance;
     }
@@ -202,6 +205,10 @@ struct Plane : Object {
 
     double3 get_normal_of(double3 point) {
         return normal;
+    }
+
+    bool has_point(double3 point) {
+        return std::abs(dot(point, normal) - distance) < EPSILON;
     }
 };
 
@@ -221,7 +228,7 @@ struct Triangle : Object {
     Plane plane;
 
     Triangle(double3 v_a, double3 v_b, double3 v_c, const double3& v_color, double v_specular, double v_reflective)
-    : Object(v_color, v_specular, v_reflective, TRIANGLE) {
+    : Object(v_color, v_specular, v_reflective) {
         a = v_a;
         b = v_b;
         c = v_c;
@@ -268,6 +275,87 @@ struct Triangle : Object {
 
     double3 get_normal_of(double3 point) {
         return plane.get_normal_of(point);
+    }
+
+    bool has_point(double3 point) {
+        // TODO: This implementation is incomplete. Repeats intersect above.
+        return plane.has_point(point);
+    }
+};
+
+enum Operation { AND, OR, MINUS };
+
+struct CSG : Object {
+    Object* object1;
+    Object* object2;
+    Operation operation;
+
+    CSG() {}
+
+    CSG(Object* v_object1, Object* v_object2, Operation v_operation, const double3& v_color, double v_specular, double v_reflective)
+    : Object(v_color, v_specular, v_reflective) {
+        object1 = v_object1;
+        object2 = v_object2;
+        operation = v_operation;
+    }
+
+    std::vector<double> intersect(double3 origin, double3 direction) {
+        std::vector<double> ts1 = object1->intersect(origin, direction);
+        std::vector<double> ts2 = object2->intersect(origin, direction);
+
+        // Objects without volume will only return a single intersection, such
+        // as a plane or triangle. Objects *with volume will return an even
+        // number of interesections.
+        if (ts1.size() % 2 != 0 || ts2.size() % 2 != 0) {
+            std::cerr << "Error: Both objects in a CSG must have volume" << std::endl;
+            return {INFINITY, INFINITY};
+        }
+
+        // Each operation has a different response, depending on which of the
+        // two objects the ray intersects.
+        if (operation == AND) {
+            // In an AND operation, *both volumes must be intersected
+            if (ts1[0] != INFINITY && ts2[0] != INFINITY) {
+                return {std::min(ts1[1], ts2[1]), std::max(ts1[0], ts2[0])};
+            }
+            return {INFINITY, INFINITY};
+        } else if (operation == OR) {
+            if (ts1[0] != INFINITY && ts2[0] != INFINITY) {
+                return {std::min(ts1[0], ts2[0]), std::max(ts1[1], ts2[1])};
+            }
+            // In an OR operation, AT LEAST one volume needs to be intersected
+            if (ts1[0] == INFINITY || ts2[0] == INFINITY) {
+                return {std::min(ts1[0], ts2[0]), std::min(ts1[1], ts2[1])};
+            }
+            return {INFINITY, INFINITY}; // Intersects neither
+        } else {  // operation == MINUS
+            // In a MINUS operation, the first object must be intersected.
+            // TODO: How to handle false positives? The part that's "subtracted"
+            // should not result in an intersection.
+            if (ts1[0] != INFINITY) {
+                return {std::min(ts1[0], ts2[0]), std::max(ts1[1], ts2[1])};
+            }
+            return {INFINITY, INFINITY};
+        }
+    }
+
+    double3 get_normal_of(double3 point) {
+        if (object1->has_point(point)) {
+            // No matter the operation, if the point of intersection lies on the
+            // first object, always use the first object's normal, normally.
+            return object1->get_normal_of(point);
+        }
+        // Otherwise, the point lies on the second object. In this case, we need
+        // to handle operation-by-operation.
+        double3 normal = object2->get_normal_of(point);
+        if (operation == AND || operation == OR) {
+            // If operation is AND or OR, use the normal, normally.
+            return normal;
+        }
+        // If the operation is a MINUS, and the point of intersection lies on
+        // the second object, the normal needs to be flipped so it's on the
+        // inside of object2.
+        return multiply(-1.0, normal);
     }
 };
 
@@ -476,7 +564,15 @@ int32_t main() {
         new Triangle({1.0, 0.0, 5.0}, {-1.0, 0.0, 5.0}, {0.0, 2.0, 4.0}, {0, 255, 255}, 500.0, 0.4),
         new Triangle({1.0, 0.0, 5.0}, {0.0, 2.0, 4.0}, {0.0, 2.0, 6.0}, {0, 255, 255}, 500.0, 0.4),
         new Triangle({1.0, 0.0, 5.0}, {-1.0, 0.0, 5.0}, {0.0, 2.0, 6.0}, {0, 255, 255}, 500.0, 0.4),
-        new Triangle({-1.0, 0.0, 5.0}, {0.0, 2.0, 4.0}, {0.0, 2.0, 6.0}, {0, 255, 255}, 500.0, 0.4)
+        new Triangle({-1.0, 0.0, 5.0}, {0.0, 2.0, 4.0}, {0.0, 2.0, 6.0}, {0, 255, 255}, 500.0, 0.4),
+        new CSG(
+            new Sphere({-2.0, 1, 4.0}, 1.0, {0, 0, 0}, 0, 0),
+            new Sphere({-2.0, 2, 4.0}, 1.0, {0, 0, 0}, 0, 0),
+            AND,
+            {255, 0, 255},
+            500.0,
+            0.4
+        )
     };
 
     std::vector<Light> lights = {
