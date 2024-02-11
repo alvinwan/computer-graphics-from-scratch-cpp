@@ -3,7 +3,7 @@ Raycast 06
 ==========
 Implements arbitrary camera positions
 
-Timing: 407ms+
+Timing: 450ms+
 JS: 300ms+
 
 ```bash
