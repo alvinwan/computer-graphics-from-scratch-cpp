@@ -1,15 +1,15 @@
 /*
-Raycast 05
+Raycast 02
 ==========
-Adds reflections
+Adds lighting on diffuse material
 
 ```bash
-g++ raytracer-05.cpp -o main.out -std=c++20
+g++ raytracer-02-diffuse.cpp -o main.out -std=c++20
 ./main.out
 open output.bmp
 ```
 
-Implementation for https://gabrielgambetta.com/computer-graphics-from-scratch/demos/raytracer-05.html
+Implementation for https://gabrielgambetta.com/computer-graphics-from-scratch/demos/raytracer-02.html
 */
 #include "bmp.h"
 #include <math.h>
@@ -17,8 +17,7 @@ Implementation for https://gabrielgambetta.com/computer-graphics-from-scratch/de
 
 typedef std::array<double, 3> double3;
 typedef std::array<uint8_t, 3> rgb;
-const double3 BACKGROUND_COLOR = {0, 0, 0};
-const double EPSILON = 0.001f;
+const double3 BACKGROUND_COLOR = {255, 255, 255};
 
 // Canvas
 
@@ -89,17 +88,13 @@ struct Sphere {
     double3 center;
     double radius;
     double3 color;
-    double specular;
-    double reflective;
 
     Sphere() {}
 
-    Sphere(const double3& v_center, double v_radius, const double3& v_color, double v_specular, double v_reflective) {
+    Sphere(const double3& v_center, double v_radius, const double3& v_color) {
         center = v_center;
         radius = v_radius;
         color = v_color;
-        specular = v_specular;
-        reflective = v_reflective;
     }
 };
 
@@ -148,7 +143,7 @@ std::array<double, 2> intersect_ray_with_sphere(
     double c = dot(center, center) - sphere.radius * sphere.radius;
 
     double discriminant = b * b - 4 * a * c;
-    if (discriminant >= 0) {
+    if (discriminant > 0) {
         return {
             (-b + sqrt(discriminant)) / (2 * a),
             (-b - sqrt(discriminant)) / (2 * a)
@@ -157,8 +152,38 @@ std::array<double, 2> intersect_ray_with_sphere(
     return {INFINITY, INFINITY};
 }
 
-// Find the closest intersection between a ray and the spheres in the scene.
-std::tuple<Sphere, double> closest_intersection(
+// Compute lighting for the scene
+double compute_lighting(double3 point, double3 normal, std::vector<Light> lights) {
+    double intensity = 0;
+    if (abs(length(normal) - 1.0f) > 0.0001f) {
+        std::cerr << "Error: Normal is not length 1 (" << length(normal) << ")" << std::endl;
+        return INFINITY;
+    }
+
+    for (int i = 0; i < lights.size(); i++) {
+        Light light = lights[i];
+        if (light.ltype == AMBIENT) {
+            intensity += light.intensity;
+        } else {
+            double3 vec_l;
+            if (light.ltype == POINT) {
+                vec_l = subtract(light.position, point);
+            } else {  // Light.DIRECTIONAL
+                vec_l = light.position;
+            }
+
+            double n_dot_l = dot(normal, vec_l);
+            if (n_dot_l > 0) {
+                intensity += light.intensity * n_dot_l / (length(vec_l));
+            }
+        }
+    }
+
+    return intensity;
+}
+
+// Traces a ray against the spheres in the scene
+double3 trace_ray(
     double3 origin,
     double3 direction,
     double min_t,
@@ -180,77 +205,6 @@ std::tuple<Sphere, double> closest_intersection(
         }
     }
 
-    return std::make_tuple(closest_sphere, closest_t);
-}
-
-// Compute the reflection of a ray on a surface defined by its normal
-double3 reflect_ray(double3 ray, double3 normal) {
-    return subtract(multiply(2 * dot(ray, normal), normal), ray);
-}
-
-// Compute lighting for the scene
-double compute_lighting(double3 point, double3 normal, double3 view, double specular, Scene scene) {
-    double intensity = 0;
-    if (abs(length(normal) - 1.0f) > 0.0001f) {
-        std::cerr << "Error: Normal is not length 1 (" << length(normal) << ")" << std::endl;
-        return INFINITY;
-    }
-
-    double length_v = length(view);
-
-    for (int i = 0; i < scene.lights.size(); i++) {
-        Light light = scene.lights[i];
-        if (light.ltype == AMBIENT) {
-            intensity += light.intensity;
-        } else {
-            double3 vec_l;
-            double shadow_t_max;
-
-            if (light.ltype == POINT) {
-                vec_l = subtract(light.position, point);
-                shadow_t_max = 1.0f;
-            } else {  // Light.DIRECTIONAL
-                vec_l = light.position;
-                shadow_t_max = INFINITY;
-            }
-
-            // Shadow check
-            std::tuple<Sphere, double> intersection = closest_intersection(point, vec_l, EPSILON, shadow_t_max, scene);
-            if (std::get<1>(intersection) != INFINITY) continue;
-
-            // Diffuse
-            double n_dot_l = dot(normal, vec_l);
-            if (n_dot_l > 0) {
-                intensity += light.intensity * n_dot_l / (length(vec_l));
-            }
-
-            // Specular, where vec_r is the 'perfect' reflection ray
-            if (specular != -1) {
-                double3 vec_r = reflect_ray(vec_l, normal);
-                double r_dot_v = dot(vec_r, view);
-                if (r_dot_v > 0) {
-                    intensity += light.intensity * pow(r_dot_v / (length(vec_r) * length_v), specular);
-                }
-            }
-        }
-    }
-
-    return intensity;
-}
-
-// Traces a ray against the spheres in the scene
-double3 trace_ray(
-    double3 origin,
-    double3 direction,
-    double min_t,
-    double max_t,
-    int32_t recursion_depth,
-    Scene scene
-) {
-    std::tuple<Sphere, double> intersection = closest_intersection(origin, direction, min_t, max_t, scene);
-    Sphere closest_sphere = std::get<0>(intersection);
-    double closest_t = std::get<1>(intersection);
-
     if (closest_t == INFINITY) {
         return BACKGROUND_COLOR;
     }
@@ -259,20 +213,8 @@ double3 trace_ray(
     double3 normal = subtract(point, closest_sphere.center);
     normal = multiply(1.0f / length(normal), normal);
 
-    double intensity = compute_lighting(point, normal, multiply(-1, direction), closest_sphere.specular, scene);
-    double3 local_color = multiply(intensity, closest_sphere.color);
-
-    // If we hit the recursion limit or the sphere is not reflective, finish
-    double reflective = closest_sphere.reflective;
-    if (recursion_depth <= 0 || reflective <= 0.0f) {
-        return local_color;
-    }
-
-    // Compute the reflected color
-    double3 reflected_ray = reflect_ray(multiply(-1.0f, direction), normal);
-    const double3 reflected_color = trace_ray(point, reflected_ray, EPSILON, INFINITY, recursion_depth - 1, scene);
-
-    return add(multiply(1.0f - reflective, local_color), multiply(reflective, reflected_color));
+    double intensity = compute_lighting(point, normal, scene.lights);
+    return multiply(intensity, closest_sphere.color);
 }
 
 
@@ -286,10 +228,10 @@ int32_t main() {
 
     // Define scene
     std::vector<Sphere> spheres = {
-        Sphere({0, -1.0f, 3.0f}, 1.0f, {255, 0, 0}, 500.0f, 0.2f),
-        Sphere({-2.0f, 0, 4.0f}, 1.0f, {0, 255, 0}, 10.0f, 0.4f),
-        Sphere({2.0f, 0, 4.0f}, 1.0f, {0, 0, 255}, 500.0f, 0.3f),
-        Sphere({0, -5001.0f, 0}, 5000.0f, {255, 255, 0}, 1000.0f, 0.5f)
+        Sphere({0, -1.0f, 3.0f}, -1.0f, {255, 0, 0}),
+        Sphere({2.0f, 0, 4.0f}, 1.0f, {0, 0, 255}),
+        Sphere({-2.0f, 0, 4.0f}, 1.0f, {0, 255, 0}),
+        Sphere({0, -5001.0f, 0}, 5000.0f, {255, 255, 0})
     };
     std::vector<Light> lights = {
         Light(AMBIENT, 0.2f, {0, 0, 0}),
@@ -302,7 +244,7 @@ int32_t main() {
         for (int32_t y = -height / 2; y < height / 2; y++)
         {
             double3 direction = canvas_to_viewport(x, y, width, height);
-            double3 color = trace_ray(camera, direction, 1.0f, INFINITY, 1, scene);
+            double3 color = trace_ray(camera, direction, 1.0f, INFINITY, scene);
             put_pixel(data, width, height, x, y, clamp(color));
         }
     }

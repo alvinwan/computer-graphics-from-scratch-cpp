@@ -1,25 +1,24 @@
 /*
-Raycast 06
+Raycast 04
 ==========
-Implements arbitrary camera positions
+Adds shadows
 
 ```bash
-g++ raytracer-06.cpp -o main.out -std=c++20
+g++ raytracer-04-shadow.cpp -o main.out -std=c++20
 ./main.out
 open output.bmp
 ```
 
-Implementation for https://gabrielgambetta.com/computer-graphics-from-scratch/demos/raytracer-06.html
+Implementation for https://gabrielgambetta.com/computer-graphics-from-scratch/demos/raytracer-04.html
 */
 #include "bmp.h"
 #include <math.h>
 #include <array>
 
 typedef std::array<double, 3> double3;
-typedef std::array<double3, 3> double33;
 typedef std::array<uint8_t, 3> rgb;
-const double3 BACKGROUND_COLOR = {0, 0, 0};
-const double EPSILON = 0.001f;
+const double3 BACKGROUND_COLOR = {255, 255, 255};
+const double EPSILON = 0.0001f;
 
 // Canvas
 
@@ -76,17 +75,6 @@ double3 subtract(double3 a, double3 b) {
     return {a[0] - b[0], a[1] - b[1], a[2] - b[2]};
 }
 
-// Multiply 3x3 matrix and 3x1 vector
-double3 matmul(double33 matrix, double3 vector) {
-    double3 out = {0, 0, 0};
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
-            out[i] += vector[j] * matrix[i][j];
-        }
-    }
-    return out;
-}
-
 rgb clamp(double3 vec) {
     return {
         (uint8_t) std::round(std::clamp<double>(vec[0], 0.0f, 255.0)),
@@ -102,16 +90,14 @@ struct Sphere {
     double radius;
     double3 color;
     double specular;
-    double reflective;
 
     Sphere() {}
 
-    Sphere(const double3& v_center, double v_radius, const double3& v_color, double v_specular, double v_reflective) {
+    Sphere(const double3& v_center, double v_radius, const double3& v_color, double v_specular) {
         center = v_center;
         radius = v_radius;
         color = v_color;
         specular = v_specular;
-        reflective = v_reflective;
     }
 };
 
@@ -128,16 +114,6 @@ struct Light {
         ltype = v_ltype;
         intensity = v_intensity;
         position = v_position;
-    }
-};
-
-struct Camera {
-    double3 position;
-    double33 rotation;
-
-    Camera(double3 v_position, double33 v_rotation) {
-        position = v_position;
-        rotation = v_rotation;
     }
 };
 
@@ -170,7 +146,7 @@ std::array<double, 2> intersect_ray_with_sphere(
     double c = dot(center, center) - sphere.radius * sphere.radius;
 
     double discriminant = b * b - 4 * a * c;
-    if (discriminant >= 0) {
+    if (discriminant > 0) {
         return {
             (-b + sqrt(discriminant)) / (2 * a),
             (-b - sqrt(discriminant)) / (2 * a)
@@ -203,11 +179,6 @@ std::tuple<Sphere, double> closest_intersection(
     }
 
     return std::make_tuple(closest_sphere, closest_t);
-}
-
-// Compute the reflection of a ray on a surface defined by its normal
-double3 reflect_ray(double3 ray, double3 normal) {
-    return subtract(multiply(2 * dot(ray, normal), normal), ray);
 }
 
 // Compute lighting for the scene
@@ -248,7 +219,7 @@ double compute_lighting(double3 point, double3 normal, double3 view, double spec
 
             // Specular, where vec_r is the 'perfect' reflection ray
             if (specular != -1) {
-                double3 vec_r = reflect_ray(vec_l, normal);
+                double3 vec_r = subtract(multiply(2 * dot(normal, vec_l), normal), vec_l);
                 double r_dot_v = dot(vec_r, view);
                 if (r_dot_v > 0) {
                     intensity += light.intensity * pow(r_dot_v / (length(vec_r) * length_v), specular);
@@ -266,7 +237,6 @@ double3 trace_ray(
     double3 direction,
     double min_t,
     double max_t,
-    int32_t recursion_depth,
     Scene scene
 ) {
     std::tuple<Sphere, double> intersection = closest_intersection(origin, direction, min_t, max_t, scene);
@@ -282,19 +252,7 @@ double3 trace_ray(
     normal = multiply(1.0f / length(normal), normal);
 
     double intensity = compute_lighting(point, normal, multiply(-1, direction), closest_sphere.specular, scene);
-    double3 local_color = multiply(intensity, closest_sphere.color);
-
-    // If we hit the recursion limit or the sphere is not reflective, finish
-    double reflective = closest_sphere.reflective;
-    if (recursion_depth <= 0 || reflective <= 0.0f) {
-        return local_color;
-    }
-
-    // Compute the reflected color
-    double3 reflected_ray = reflect_ray(multiply(-1.0f, direction), normal);
-    const double3 reflected_color = trace_ray(point, reflected_ray, EPSILON, INFINITY, recursion_depth - 1, scene);
-
-    return add(multiply(1.0f - reflective, local_color), multiply(reflective, reflected_color));
+    return multiply(intensity, closest_sphere.color);
 }
 
 
@@ -304,20 +262,14 @@ int32_t main() {
     uint8_t data[width * height][3];
 
     // Define camera settings
-    double3 position = {3, 0, 1};
-    double33 rotation = {{
-        {{0.7071, 0, -0.7071}},
-        {{     0, 1,       0}},
-        {{0.7071, 0,  0.7071}}
-    }};
-    Camera camera = Camera(position, rotation);
+    double3 camera = {0, 0, 0};
 
     // Define scene
     std::vector<Sphere> spheres = {
-        Sphere({0, -1.0f, 3.0f}, 1.0f, {255, 0, 0}, 500.0f, 0.2f),
-        Sphere({-2.0f, 0, 4.0f}, 1.0f, {0, 255, 0}, 10.0f, 0.4f),
-        Sphere({2.0f, 0, 4.0f}, 1.0f, {0, 0, 255}, 500.0f, 0.3f),
-        Sphere({0, -5001.0f, 0}, 5000.0f, {255, 255, 0}, 1000.0f, 0.5f)
+        Sphere({0, -1.0f, 3.0f}, -1.0f, {255, 0, 0}, 500.0f),
+        Sphere({2.0f, 0, 4.0f}, 1.0f, {0, 0, 255}, 500.0f),
+        Sphere({-2.0f, 0, 4.0f}, 1.0f, {0, 255, 0}, 10.0f),
+        Sphere({0, -5001.0f, 0}, 5000.0f, {255, 255, 0}, 1000.0f)
     };
     std::vector<Light> lights = {
         Light(AMBIENT, 0.2f, {0, 0, 0}),
@@ -329,8 +281,8 @@ int32_t main() {
     for (int32_t x = -width / 2; x < width / 2; x++) {
         for (int32_t y = -height / 2; y < height / 2; y++)
         {
-            double3 direction = matmul(camera.rotation, canvas_to_viewport(x, y, width, height));
-            double3 color = trace_ray(camera.position, direction, 1.0f, INFINITY, 3, scene);
+            double3 direction = canvas_to_viewport(x, y, width, height);
+            double3 color = trace_ray(camera, direction, 1.0f, INFINITY, scene);
             put_pixel(data, width, height, x, y, clamp(color));
         }
     }

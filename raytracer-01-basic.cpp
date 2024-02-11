@@ -4,7 +4,7 @@ Raycast 01
 Implements a simple raycast in a scene with 3 spheres.
 
 ```bash
-g++ raytracer-01.cpp -o main.out -std=c++20
+g++ raytracer-01-basic.cpp -o main.out -std=c++20
 ./main.out
 open output.bmp
 ```

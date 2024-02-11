@@ -4,7 +4,7 @@ Raycast 03
 Adds specular reflections
 
 ```bash
-g++ raytracer-03.cpp -o main.out -std=c++20
+g++ raytracer-03-specular.cpp -o main.out -std=c++20
 ./main.out
 open output.bmp
 ```
