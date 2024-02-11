@@ -330,9 +330,10 @@ struct CSG : Object {
             return {INFINITY, INFINITY}; // Intersects neither
         } else {  // operation == MINUS
             // In a MINUS operation, the first object must be intersected.
-            // TODO: How to handle false positives? The part that's "subtracted"
-            // should not result in an intersection.
-            if (ts1[0] != INFINITY) {
+            // If you order all the t's together, we allow BABA, ABAB, AA, ABBA,
+            // and disallow BB, BAAB. We can check this by ensuring that A[0]
+            // is in front OR A[1] is in the back.
+            if (ts1[0] != INFINITY && (ts1[0] < ts2[0] || ts1[1] > ts2[1])) {
                 return {std::min(ts1[0], ts2[0]), std::max(ts1[1], ts2[1])};
             }
             return {INFINITY, INFINITY};
@@ -557,22 +558,26 @@ int32_t main() {
 
     // Define scene
     std::vector<Object*> objects = {
-        new Sphere({0, -1.0f, 3.0f}, 1.0f, {255, 0, 0}, 500.0f, 0.2f),
-        new Sphere({-2.0f, 0, 4.0f}, 1.0f, {0, 255, 0}, 10.0f, 0.4f),
-        new Sphere({2.0f, 0, 4.0f}, 1.0f, {0, 0, 255}, 500.0f, 0.3f),
         new Sphere({0, -5001.0f, 0}, 5000.0f, {255, 255, 0}, 1000.0f, 0.5f),
         new Triangle({1.0, 0.0, 5.0}, {-1.0, 0.0, 5.0}, {0.0, 2.0, 4.0}, {0, 255, 255}, 500.0, 0.4),
         new Triangle({1.0, 0.0, 5.0}, {0.0, 2.0, 4.0}, {0.0, 2.0, 6.0}, {0, 255, 255}, 500.0, 0.4),
         new Triangle({1.0, 0.0, 5.0}, {-1.0, 0.0, 5.0}, {0.0, 2.0, 6.0}, {0, 255, 255}, 500.0, 0.4),
         new Triangle({-1.0, 0.0, 5.0}, {0.0, 2.0, 4.0}, {0.0, 2.0, 6.0}, {0, 255, 255}, 500.0, 0.4),
         new CSG(
-            new Sphere({-2.0, 1, 4.0}, 1.0, {0, 0, 0}, 0, 0),
-            new Sphere({-2.0, 2, 4.0}, 1.0, {0, 0, 0}, 0, 0),
-            AND,
-            {255, 0, 255},
-            500.0,
-            0.4
-        )
+            new Sphere({-2.0f, 0, 4.0f}, 1.0, {0, 0, 0}, 0, 0),
+            new Sphere({-2.0f, 1, 4.0f}, 1.0, {0, 0, 0}, 0, 0),
+            OR, {0, 255, 0}, 10.0, 0.4
+        ),
+        new CSG(
+            new Sphere({0, -1.0f, 3.0f}, 1.0f, {0, 0, 0}, 0, 0),
+            new Sphere({0, 0, 3}, 1, {0, 0, 0}, 0, 0),
+            AND, {255, 0, 0}, 500.0f, 0.2f
+        ),
+        new CSG(
+            new Sphere({2.0f, 0, 4.0f}, 1.0f, {0, 0, 0}, 0, 0),
+            new Sphere({2.0f, 1, 3.0f}, 1.0f, {0, 0, 0}, 0, 0),
+            MINUS, {0, 0, 255}, 500.0, 0.3
+        ),
     };
 
     std::vector<Light> lights = {
