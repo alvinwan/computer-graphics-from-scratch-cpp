@@ -20,7 +20,6 @@ Implementation for https://gabrielgambetta.com/computer-graphics-from-scratch/03
 
 typedef std::array<double, 3> double3;
 typedef std::array<uint8_t, 3> rgb;
-const double3 BACKGROUND_COLOR = {255, 255, 255};
 
 // Canvas
 
@@ -122,10 +121,12 @@ struct Light {
 struct Scene {
     std::vector<Sphere> spheres;
     std::vector<Light> lights;
+    double3 background_color;
 
-    Scene(std::vector<Sphere> v_spheres, std::vector<Light> v_lights) {
+    Scene(std::vector<Sphere> v_spheres, std::vector<Light> v_lights, double3 v_background_color) {
         spheres = v_spheres;
         lights = v_lights;
+        background_color = v_background_color;
     }
 };
 
@@ -223,7 +224,7 @@ double3 trace_ray(
     }
 
     if (closest_t == INFINITY) {
-        return BACKGROUND_COLOR;
+        return scene.background_color;
     }
 
     double3 point = add(origin, multiply(closest_t, direction));
@@ -255,7 +256,7 @@ int32_t main() {
         Light(POINT, 0.6, {2, 1, 0}),
         Light(DIRECTIONAL, 0.2, {1, 4, 4})
     };
-    Scene scene = Scene(spheres, lights);
+    Scene scene = Scene(spheres, lights, {255, 255, 255});
 
     for (int32_t x = -width / 2; x < width / 2; x++) {
         for (int32_t y = -height / 2; y < height / 2; y++)

@@ -23,7 +23,6 @@ https://gabrielgambetta.com/computer-graphics-from-scratch/05-extending-the-rayt
 typedef std::array<double, 3> double3;
 typedef std::array<double3, 3> double33;
 typedef std::array<uint8_t, 3> rgb;
-const double3 BACKGROUND_COLOR = {0, 0, 0};
 const double EPSILON = 0.001f;
 
 // Canvas
@@ -390,10 +389,12 @@ struct Camera {
 struct Scene {
     std::vector<Object*> objects;
     std::vector<Light> lights;
+    double3 background_color;
 
-    Scene(std::vector<Object*> v_objects, std::vector<Light> v_lights) {
+    Scene(std::vector<Object*> v_objects, std::vector<Light> v_lights, double3 v_background_color) {
         objects = v_objects;
         lights = v_lights;
+        background_color = v_background_color;
     }
 };
 
@@ -518,7 +519,7 @@ double3 trace_ray(
 ) {
     Intersection intersection = closest_intersection(origin, direction, min_t, max_t, scene);
     if (!intersection.is_valid) {
-        return BACKGROUND_COLOR;
+        return scene.background_color;
     }
 
     double intensity = compute_lighting(
@@ -586,7 +587,7 @@ int32_t main() {
         Light(POINT, 0.6, {2, 1, 0}),
         Light(DIRECTIONAL, 0.2, {1, 4, 4})
     };
-    Scene scene = Scene(objects, lights);
+    Scene scene = Scene(objects, lights, {0, 0, 0});
 
     for (int32_t x = -width / 2; x < width / 2; x++) {
         for (int32_t y = -height / 2; y < height / 2; y++)
