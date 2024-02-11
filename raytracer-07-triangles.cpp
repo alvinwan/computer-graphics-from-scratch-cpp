@@ -110,7 +110,7 @@ rgb clamp(double3 vec) {
 
 // Ray tracing
 
-enum Shape { SPHERE, TRIANGLE };
+enum Shape { SPHERE, TRIANGLE, PLANE };
 
 struct Object {
     Shape shape;
@@ -126,6 +126,17 @@ struct Object {
         reflective = v_reflective;
         shape = v_shape;
     }
+
+    // Computes intersection of a ray with object. Returns solution in terms of
+    // line parameter t.
+    virtual std::vector<double> intersect(double3 origin, double3 direction) {
+        return {INFINITY};
+    }
+
+    // Returns normal for a given point on the surface of this object.
+    virtual double3 get_normal_of(double3 point) {
+        return {0, 0, 0};
+    }
 };
 
 struct Sphere : Object {
@@ -139,19 +150,69 @@ struct Sphere : Object {
         center = v_center;
         radius = v_radius;
     }
+
+    // Computes intersection of a ray with sphere. Returns solution in terms of
+    // line parameter t.
+    std::vector<double> intersect(double3 origin, double3 direction) {
+        double3 offset = subtract(origin, center);
+
+        double a = dot(direction, direction);
+        double b = 2 * dot(offset, direction);
+        double c = dot(offset, offset) - radius * radius;
+
+        double discriminant = b * b - 4 * a * c;
+        if (discriminant >= 0) {
+            return {
+                (-b + sqrt(discriminant)) / (2 * a),
+                (-b - sqrt(discriminant)) / (2 * a)
+            };
+        }
+        return {INFINITY, INFINITY};
+    }
+
+    double3 get_normal_of(double3 point) {
+        double3 normal = subtract(point, center);
+        normal = multiply(1.0f / length(normal), normal);
+        return normal;
+    }
 };
 
-struct Plane {
+struct Plane : Object {
     double3 normal;
     double distance;
 
     Plane() {}
 
-    Plane(double3 v_normal, double v_distance) {
+    Plane(double3 v_normal, double v_distance, const double3& v_color, double v_specular, double v_reflective)
+    : Object(v_color, v_specular, v_reflective, PLANE) {
         normal = v_normal;
         distance = v_distance;
     }
+
+    // Computes intersection of a ray with plane. Returns solution in terms of
+    // line parameter t.
+    std::vector<double> intersect(double3 origin, double3 direction) {
+        double denominator = dot(normal, direction);
+        if (denominator == 0) return {INFINITY};  // Plane is parallel to ray
+
+        double t = -(distance + dot(normal, origin)) / denominator;
+        if (t < 0) return {INFINITY}; // Triangle is 'behind' the ray
+        return {t};
+    }
+
+    double3 get_normal_of(double3 point) {
+        return normal;
+    }
 };
+
+// Compute on which side a point lies, relative to the line defined by two
+// points. This is the sign that you would get by computing
+// normal.dot(point) - distance.
+double sign(double3 point, double3 a, double3 b, double3 normal) {
+    double3 candidate = subtract(point, a);
+    double3 edge = subtract(b, a);
+    return dot(normal, cross_product(candidate, edge));
+}
 
 struct Triangle : Object {
     double3 a;
@@ -178,7 +239,35 @@ struct Triangle : Object {
         normal = multiply(1.0f / magnitude, normal);
 
         double distance = -dot(normal, a);
-        plane = Plane(normal, distance);
+        plane = Plane(normal, distance, v_color, v_specular, v_reflective);
+    }
+
+    // Computes intersection of a ray with triangle. Returns solution in terms
+    // of line parameter t.
+    std::vector<double> intersect(double3 origin, double3 direction) {
+        // Find intersection between ray and plane
+        double t = plane.intersect(origin, direction)[0];
+        double3 point = add(origin, multiply(t, direction));
+
+        // Check if the intersection lies in the triangle. NOTE the ordering of
+        // points must be consistently clockwise OR counter clockwise, in this
+        // calculation.
+        double sign0 = sign(point, a, b, plane.normal);
+        double sign1 = sign(point, b, c, plane.normal);
+        double sign2 = sign(point, c, a, plane.normal);
+
+        bool is_inside_cw = (sign0 > 0) && (sign1 > 0) && (sign2 > 0);
+        bool is_inside_ccw = (sign0 < 0) && (sign1 < 0) && (sign2 < 0);
+        if (is_inside_cw || is_inside_ccw) {
+            return {t};
+        }
+
+        // If not in the triangle, ray does not intersect
+        return {INFINITY};
+    }
+
+    double3 get_normal_of(double3 point) {
+        return plane.get_normal_of(point);
     }
 };
 
@@ -209,13 +298,11 @@ struct Camera {
 };
 
 struct Scene {
-    std::vector<Sphere> spheres;
-    std::vector<Triangle> triangles;
+    std::vector<Object*> objects;
     std::vector<Light> lights;
 
-    Scene(std::vector<Sphere> v_spheres, std::vector<Triangle> v_triangles, std::vector<Light> v_lights) {
-        spheres = v_spheres;
-        triangles = v_triangles;
+    Scene(std::vector<Object*> v_objects, std::vector<Light> v_lights) {
+        objects = v_objects;
         lights = v_lights;
     }
 };
@@ -223,77 +310,6 @@ struct Scene {
 // Convert 2d pixel coordinates to 3d viewport coordinates.
 double3 canvas_to_viewport(int32_t x, int32_t y, int32_t width, int32_t height) {
     return { (double) x / width, (double) y / height, 1 };
-}
-
-// Computes interesction of a ray with plane. Returns solution in terms of
-// line parameter t.
-double intersect_ray_with_plane(double3 origin, double3 direction, Plane plane) {
-    double denominator = dot(plane.normal, direction);
-    if (denominator == 0) return INFINITY;  // Plane is parallel to ray
-
-    double t = -(plane.distance + dot(plane.normal, origin)) / denominator;
-    if (t < 0) return INFINITY; // Triangle is 'behind' the ray
-    return t;
-}
-
-// Compute on which side a point lies, relative to the line defined by two
-// points. This is the sign that you would get by computing
-// normal.dot(point) - distance.
-double sign(double3 point, double3 a, double3 b, double3 normal) {
-    double3 candidate = subtract(point, a);
-    double3 edge = subtract(b, a);
-    return dot(normal, cross_product(candidate, edge));
-}
-
-// Computes intersection of a ray with triangles. Returns solution in terms of
-// line parameter t.
-double intersect_ray_with_triangle(
-    double3 origin,
-    double3 direction,
-    Triangle triangle
-) {
-    // Find intersection between ray and plane
-    double t = intersect_ray_with_plane(origin, direction, triangle.plane);
-    double3 point = add(origin, multiply(t, direction));
-
-    // Check if the intersection lies in the triangle. NOTE the ordering of
-    // points must be consistently clockwise OR counter clockwise, in this
-    // calculation.
-    double sign0 = sign(point, triangle.a, triangle.b, triangle.plane.normal);
-    double sign1 = sign(point, triangle.b, triangle.c, triangle.plane.normal);
-    double sign2 = sign(point, triangle.c, triangle.a, triangle.plane.normal);
-
-    bool is_inside_cw = (sign0 > 0) && (sign1 > 0) && (sign2 > 0);
-    bool is_inside_ccw = (sign0 < 0) && (sign1 < 0) && (sign2 < 0);
-    if (is_inside_cw || is_inside_ccw) {
-        return t;
-    }
-
-    // If not in the triangle, ray does not intersect
-    return INFINITY;
-}
-
-// Computes intersection of ray with spheres. Returns solutions in terms of
-// line parameter t.
-std::array<double, 2> intersect_ray_with_sphere(
-    double3 origin,
-    double3 direction,
-    Sphere sphere
-) {
-    double3 center = subtract(origin, sphere.center);
-
-    double a = dot(direction, direction);
-    double b = 2 * dot(center, direction);
-    double c = dot(center, center) - sphere.radius * sphere.radius;
-
-    double discriminant = b * b - 4 * a * c;
-    if (discriminant >= 0) {
-        return {
-            (-b + sqrt(discriminant)) / (2 * a),
-            (-b - sqrt(discriminant)) / (2 * a)
-        };
-    }
-    return {INFINITY, INFINITY};
 }
 
 // Holds intersection information for a raycast
@@ -324,38 +340,26 @@ Intersection closest_intersection(
     Scene scene
 ) {
     double closest_t = INFINITY;
-    Object closest_object;
-    double3 normal;
+    Object* closest_object;
 
-    for (int i = 0; i < scene.spheres.size(); i++) {
-        std::array<double, 2> ts = intersect_ray_with_sphere(origin, direction, scene.spheres[i]);
-        for (int j = 0; j < 2; j++) {
+    for (int i = 0; i < scene.objects.size(); i++) {
+        Object* object = scene.objects[i];
+
+        std::vector<double> ts = object->intersect(origin, direction);
+        for (int j = 0; j < ts.size(); j++) {
             if (ts[j] < closest_t && min_t < ts[j] && ts[j] < max_t) {
                 closest_t = ts[j];
-                closest_object = scene.spheres[i];
-
-                // NOTE: This performs unnecessary calculation for every single
-                // intersection that is within range -- instead of computing the
-                // normal *only for the closest t.
-                double3 point = add(origin, multiply(closest_t, direction));
-                normal = subtract(point, scene.spheres[i].center);
-                normal = multiply(1.0f / length(normal), normal);
+                closest_object = object;
             }
         }
     }
 
-    for (int i = 0; i < scene.triangles.size(); i++) {
-        double t = intersect_ray_with_triangle(origin, direction, scene.triangles[i]);
-        if (t < closest_t && min_t < t && t < max_t) {
-            closest_t = t;
-            closest_object = scene.triangles[i];
-            normal = scene.triangles[i].plane.normal;
-        }
-    }
+    // sets intersection.is_valid=false
+    if (closest_t == INFINITY) return Intersection();
 
-    if (closest_t == INFINITY) return Intersection();  // sets is_valid=false
+    // sets intersection.is_valid = true
     double3 point = add(origin, multiply(closest_t, direction));
-    return Intersection(closest_object, point, normal);  // sets is_valid = true
+    return Intersection(*closest_object, point, closest_object->get_normal_of(point));
 }
 
 // Compute the reflection of a ray on a surface defined by its normal
@@ -464,24 +468,23 @@ int32_t main() {
     Camera camera = Camera(position, rotation);
 
     // Define scene
-    std::vector<Sphere> spheres = {
-        Sphere({0, -1.0f, 3.0f}, 1.0f, {255, 0, 0}, 500.0f, 0.2f),
-        Sphere({-2.0f, 0, 4.0f}, 1.0f, {0, 255, 0}, 10.0f, 0.4f),
-        Sphere({2.0f, 0, 4.0f}, 1.0f, {0, 0, 255}, 500.0f, 0.3f),
-        Sphere({0, -5001.0f, 0}, 5000.0f, {255, 255, 0}, 1000.0f, 0.5f)
+    std::vector<Object*> objects = {
+        new Sphere({0, -1.0f, 3.0f}, 1.0f, {255, 0, 0}, 500.0f, 0.2f),
+        new Sphere({-2.0f, 0, 4.0f}, 1.0f, {0, 255, 0}, 10.0f, 0.4f),
+        new Sphere({2.0f, 0, 4.0f}, 1.0f, {0, 0, 255}, 500.0f, 0.3f),
+        new Sphere({0, -5001.0f, 0}, 5000.0f, {255, 255, 0}, 1000.0f, 0.5f),
+        new Triangle({1.0, 0.0, 5.0}, {-1.0, 0.0, 5.0}, {0.0, 2.0, 4.0}, {0, 255, 255}, 500.0, 0.4),
+        new Triangle({1.0, 0.0, 5.0}, {0.0, 2.0, 4.0}, {0.0, 2.0, 6.0}, {0, 255, 255}, 500.0, 0.4),
+        new Triangle({1.0, 0.0, 5.0}, {-1.0, 0.0, 5.0}, {0.0, 2.0, 6.0}, {0, 255, 255}, 500.0, 0.4),
+        new Triangle({-1.0, 0.0, 5.0}, {0.0, 2.0, 4.0}, {0.0, 2.0, 6.0}, {0, 255, 255}, 500.0, 0.4)
     };
-    std::vector<Triangle> triangles = {
-        Triangle({1.0, 0.0, 5.0}, {-1.0, 0.0, 5.0}, {0.0, 2.0, 4.0}, {0, 255, 255}, 500.0, 0.4),
-        Triangle({1.0, 0.0, 5.0}, {0.0, 2.0, 4.0}, {0.0, 2.0, 6.0}, {0, 255, 255}, 500.0, 0.4),
-        Triangle({1.0, 0.0, 5.0}, {-1.0, 0.0, 5.0}, {0.0, 2.0, 6.0}, {0, 255, 255}, 500.0, 0.4),
-        Triangle({-1.0, 0.0, 5.0}, {0.0, 2.0, 4.0}, {0.0, 2.0, 6.0}, {0, 255, 255}, 500.0, 0.4)
-    };
+
     std::vector<Light> lights = {
         Light(AMBIENT, 0.2f, {0, 0, 0}),
         Light(POINT, 0.6f, {2, 1, 0}),
         Light(DIRECTIONAL, 0.2f, {1, 4, 4})
     };
-    Scene scene = Scene(spheres, triangles, lights);
+    Scene scene = Scene(objects, lights);
 
     for (int32_t x = -width / 2; x < width / 2; x++) {
         for (int32_t y = -height / 2; y < height / 2; y++)
