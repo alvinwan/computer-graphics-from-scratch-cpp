@@ -155,20 +155,21 @@ struct Sphere : Object {
     // Computes intersection of a ray with sphere. Returns solution in terms of
     // line parameter t.
     std::vector<double> intersect(double3 origin, double3 direction) {
-        double3 offset = subtract(origin, center);
+        double3 difference = subtract(origin, center);
 
         double a = dot(direction, direction);
-        double b = 2 * dot(offset, direction);
-        double c = dot(offset, offset) - radius * radius;
+        double b = 2 * dot(difference, direction);
+        double c = dot(difference, difference) - radius * radius;
 
         double discriminant = b * b - 4 * a * c;
-        if (discriminant >= 0) {
-            return {
-                (-b + sqrt(discriminant)) / (2 * a),
-                (-b - sqrt(discriminant)) / (2 * a)
-            };
+        if (discriminant < 0) {
+            return {INFINITY, INFINITY};
         }
-        return {INFINITY, INFINITY};
+
+        return {
+            (-b + sqrt(discriminant)) / (2 * a),
+            (-b - sqrt(discriminant)) / (2 * a)
+        };
     }
 
     double3 get_normal_of(double3 point) {

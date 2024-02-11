@@ -145,20 +145,21 @@ std::vector<double> intersect_ray_with_sphere(
     double3 direction,
     Sphere sphere
 ) {
-    double3 center = subtract(origin, sphere.center);
+    double3 difference = subtract(origin, sphere.center);
 
     double a = dot(direction, direction);
-    double b = 2 * dot(center, direction);
-    double c = dot(center, center) - sphere.radius * sphere.radius;
+    double b = 2 * dot(difference, direction);
+    double c = dot(difference, difference) - sphere.radius * sphere.radius;
 
     double discriminant = b * b - 4 * a * c;
-    if (discriminant >= 0) {
-        return {
-            (-b + sqrt(discriminant)) / (2 * a),
-            (-b - sqrt(discriminant)) / (2 * a)
-        };
+    if (discriminant < 0) {
+        return {INFINITY, INFINITY};
     }
-    return {INFINITY, INFINITY};
+
+    return {
+        (-b + sqrt(discriminant)) / (2 * a),
+        (-b - sqrt(discriminant)) / (2 * a)
+    };
 }
 
 // Find the closest intersection between a ray and the spheres in the scene.
