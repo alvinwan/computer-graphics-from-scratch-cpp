@@ -3,7 +3,8 @@ Raycast 05
 ==========
 Adds reflections
 
-Timing: ~380ms
+Timing: 360ms+
+JS: 270ms+
 
 ```bash
 g++ raytracer-05-reflection.cpp -o main.out -std=c++20 -Ofast
@@ -79,9 +80,9 @@ double3 subtract(double3 a, double3 b) {
 
 rgb clamp(double3 vec) {
     return {
-        (uint8_t) std::round(std::clamp<double>(vec[0], 0.0f, 255.0)),
-        (uint8_t) std::round(std::clamp<double>(vec[1], 0.0f, 255.0)),
-        (uint8_t) std::round(std::clamp<double>(vec[2], 0.0f, 255.0)),
+        (uint8_t) std::round(std::clamp<double>(vec[0], 0, 255.0)),
+        (uint8_t) std::round(std::clamp<double>(vec[1], 0, 255.0)),
+        (uint8_t) std::round(std::clamp<double>(vec[2], 0, 255.0)),
     };
 }
 
@@ -193,7 +194,7 @@ double3 reflect_ray(double3 ray, double3 normal) {
 // Compute lighting for the scene
 double compute_lighting(double3 point, double3 normal, double3 view, double specular, Scene scene) {
     double intensity = 0;
-    if (abs(length(normal) - 1.0f) > 0.0001f) {
+    if (abs(length(normal) - 1) > 0.0001f) {
         std::cerr << "Error: Normal is not length 1 (" << length(normal) << ")" << std::endl;
         return INFINITY;
     }
@@ -210,7 +211,7 @@ double compute_lighting(double3 point, double3 normal, double3 view, double spec
 
             if (light.ltype == POINT) {
                 vec_l = subtract(light.position, point);
-                shadow_t_max = 1.0f;
+                shadow_t_max = 1;
             } else {  // Light.DIRECTIONAL
                 vec_l = light.position;
                 shadow_t_max = INFINITY;
@@ -259,22 +260,22 @@ double3 trace_ray(
 
     double3 point = add(origin, multiply(closest_t, direction));
     double3 normal = subtract(point, closest_sphere.center);
-    normal = multiply(1.0f / length(normal), normal);
+    normal = multiply(1 / length(normal), normal);
 
     double intensity = compute_lighting(point, normal, multiply(-1, direction), closest_sphere.specular, scene);
     double3 local_color = multiply(intensity, closest_sphere.color);
 
     // If we hit the recursion limit or the sphere is not reflective, finish
     double reflective = closest_sphere.reflective;
-    if (recursion_depth <= 0 || reflective <= 0.0f) {
+    if (recursion_depth <= 0 || reflective <= 0) {
         return local_color;
     }
 
     // Compute the reflected color
-    double3 reflected_ray = reflect_ray(multiply(-1.0f, direction), normal);
+    double3 reflected_ray = reflect_ray(multiply(-1, direction), normal);
     const double3 reflected_color = trace_ray(point, reflected_ray, EPSILON, INFINITY, recursion_depth - 1, scene);
 
-    return add(multiply(1.0f - reflective, local_color), multiply(reflective, reflected_color));
+    return add(multiply(1 - reflective, local_color), multiply(reflective, reflected_color));
 }
 
 
@@ -288,15 +289,15 @@ int32_t main() {
 
     // Define scene
     std::vector<Sphere> spheres = {
-        Sphere({0, -1.0f, 3.0f}, 1.0f, {255, 0, 0}, 500.0f, 0.2f),
-        Sphere({-2.0f, 0, 4.0f}, 1.0f, {0, 255, 0}, 10.0f, 0.4f),
-        Sphere({2.0f, 0, 4.0f}, 1.0f, {0, 0, 255}, 500.0f, 0.3f),
-        Sphere({0, -5001.0f, 0}, 5000.0f, {255, 255, 0}, 1000.0f, 0.5f)
+        Sphere({0, -1, 3}, 1, {255, 0, 0}, 500, 0.2),
+        Sphere({-2, 0, 4}, 1, {0, 255, 0}, 10, 0.4),
+        Sphere({2, 0, 4}, 1, {0, 0, 255}, 500, 0.3),
+        Sphere({0, -5001, 0}, 5000, {255, 255, 0}, 1000, 0.5)
     };
     std::vector<Light> lights = {
-        Light(AMBIENT, 0.2f, {0, 0, 0}),
-        Light(POINT, 0.6f, {2, 1, 0}),
-        Light(DIRECTIONAL, 0.2f, {1, 4, 4})
+        Light(AMBIENT, 0.2, {0, 0, 0}),
+        Light(POINT, 0.6, {2, 1, 0}),
+        Light(DIRECTIONAL, 0.2, {1, 4, 4})
     };
     Scene scene = Scene(spheres, lights);
 
@@ -304,7 +305,7 @@ int32_t main() {
         for (int32_t y = -height / 2; y < height / 2; y++)
         {
             double3 direction = canvas_to_viewport(x, y, width, height);
-            double3 color = trace_ray(camera, direction, 1.0f, INFINITY, 1, scene);
+            double3 color = trace_ray(camera, direction, 1, INFINITY, 1, scene);
             put_pixel(data, width, height, x, y, clamp(color));
         }
     }

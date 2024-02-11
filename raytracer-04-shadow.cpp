@@ -3,7 +3,8 @@ Raycast 04
 ==========
 Adds shadows
 
-Timing: ~160ms
+Timing: 140ms+
+JS: 150ms+
 
 ```bash
 g++ raytracer-04-shadow.cpp -o main.out -std=c++20 -Ofast
@@ -79,9 +80,9 @@ double3 subtract(double3 a, double3 b) {
 
 rgb clamp(double3 vec) {
     return {
-        (uint8_t) std::round(std::clamp<double>(vec[0], 0.0f, 255.0)),
-        (uint8_t) std::round(std::clamp<double>(vec[1], 0.0f, 255.0)),
-        (uint8_t) std::round(std::clamp<double>(vec[2], 0.0f, 255.0)),
+        (uint8_t) std::round(std::clamp<double>(vec[0], 0.0, 255.0)),
+        (uint8_t) std::round(std::clamp<double>(vec[1], 0.0, 255.0)),
+        (uint8_t) std::round(std::clamp<double>(vec[2], 0.0, 255.0)),
     };
 }
 
@@ -148,7 +149,7 @@ std::array<double, 2> intersect_ray_with_sphere(
     double c = dot(center, center) - sphere.radius * sphere.radius;
 
     double discriminant = b * b - 4 * a * c;
-    if (discriminant > 0) {
+    if (discriminant >= 0) {
         return {
             (-b + sqrt(discriminant)) / (2 * a),
             (-b - sqrt(discriminant)) / (2 * a)
@@ -268,15 +269,15 @@ int32_t main() {
 
     // Define scene
     std::vector<Sphere> spheres = {
-        Sphere({0, -1.0f, 3.0f}, -1.0f, {255, 0, 0}, 500.0f),
-        Sphere({2.0f, 0, 4.0f}, 1.0f, {0, 0, 255}, 500.0f),
-        Sphere({-2.0f, 0, 4.0f}, 1.0f, {0, 255, 0}, 10.0f),
-        Sphere({0, -5001.0f, 0}, 5000.0f, {255, 255, 0}, 1000.0f)
+        Sphere({0, -1, 3}, -1, {255, 0, 0}, 500),
+        Sphere({2, 0, 4}, 1, {0, 0, 255}, 500),
+        Sphere({-2, 0, 4}, 1, {0, 255, 0}, 10),
+        Sphere({0, -5001, 0}, 5000, {255, 255, 0}, 1000)
     };
     std::vector<Light> lights = {
-        Light(AMBIENT, 0.2f, {0, 0, 0}),
-        Light(POINT, 0.6f, {2, 1, 0}),
-        Light(DIRECTIONAL, 0.2f, {1, 4, 4})
+        Light(AMBIENT, 0.2, {0, 0, 0}),
+        Light(POINT, 0.6, {2, 1, 0}),
+        Light(DIRECTIONAL, 0.2, {1, 4, 4})
     };
     Scene scene = Scene(spheres, lights);
 
@@ -284,7 +285,7 @@ int32_t main() {
         for (int32_t y = -height / 2; y < height / 2; y++)
         {
             double3 direction = canvas_to_viewport(x, y, width, height);
-            double3 color = trace_ray(camera, direction, 1.0f, INFINITY, scene);
+            double3 color = trace_ray(camera, direction, 1.0, INFINITY, scene);
             put_pixel(data, width, height, x, y, clamp(color));
         }
     }

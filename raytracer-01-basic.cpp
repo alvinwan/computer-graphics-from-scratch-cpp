@@ -3,7 +3,13 @@ Raycast 01
 ==========
 Implements a simple raycast in a scene with 3 spheres.
 
-Timing: ~40ms
+Note the use of double precision to match Javascript's default fp64 number
+format, per MDN's web docs; this turns out to be necessary later on to avoid
+shadow acne in Raytracer 04:
+https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number#number_encoding
+
+Timing: 30ms+
+JS: 115ms+
 
 ```bash
 g++ raytracer-01-basic.cpp -o main.out -std=c++20 -Ofast
@@ -96,7 +102,7 @@ std::array<double, 2> intersect_ray_with_sphere(
     double c = dot(center, center) - sphere.radius * sphere.radius;
 
     double discriminant = b * b - 4 * a * c;
-    if (discriminant > 0) {
+    if (discriminant >= 0) {
         return {
             (-b + sqrt(discriminant)) / (2 * a),
             (-b - sqrt(discriminant)) / (2 * a)
@@ -146,16 +152,16 @@ int32_t main() {
 
     // Define scene
     std::vector<Sphere> spheres = {
-        Sphere({0, -1.0f, 3.0f}, -1.0f, {255, 0, 0}),
-        Sphere({2.0f, 0, 4.0f}, 1.0f, {0, 0, 255}),
-        Sphere({-2.0f, 0, 4.0f}, 1.0f, {0, 255, 0})
+        Sphere({0, -1, 3}, -1, {255, 0, 0}),
+        Sphere({2, 0, 4}, 1, {0, 0, 255}),
+        Sphere({-2, 0, 4}, 1, {0, 255, 0})
     };
 
     for (int32_t x = -width / 2; x < width / 2; x++) {
         for (int32_t y = -height / 2; y < height / 2; y++)
         {
             double3 direction = canvas_to_viewport(x, y, width, height);
-            rgb color = trace_ray(camera, direction, 1.0f, INFINITY, spheres);
+            rgb color = trace_ray(camera, direction, 1.0, INFINITY, spheres);
             put_pixel(data, width, height, x, y, color);
         }
     }
