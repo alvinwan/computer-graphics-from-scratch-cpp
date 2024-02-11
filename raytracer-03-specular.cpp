@@ -3,8 +3,10 @@ Raycast 03
 ==========
 Adds specular reflections
 
+Timing: ~100ms
+
 ```bash
-g++ raytracer-03-specular.cpp -o main.out -std=c++20
+g++ raytracer-03-specular.cpp -o main.out -std=c++20 -Ofast
 ./main.out
 open output.bmp
 ```

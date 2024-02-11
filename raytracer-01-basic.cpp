@@ -3,8 +3,10 @@ Raycast 01
 ==========
 Implements a simple raycast in a scene with 3 spheres.
 
+Timing: ~40ms
+
 ```bash
-g++ raytracer-01-basic.cpp -o main.out -std=c++20
+g++ raytracer-01-basic.cpp -o main.out -std=c++20 -Ofast
 ./main.out
 open output.bmp
 ```

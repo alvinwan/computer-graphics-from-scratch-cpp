@@ -3,8 +3,10 @@ Raycast 02
 ==========
 Adds lighting on diffuse material
 
+Timing: ~80ms
+
 ```bash
-g++ raytracer-02-diffuse.cpp -o main.out -std=c++20
+g++ raytracer-02-diffuse.cpp -o main.out -std=c++20 -Ofast
 ./main.out
 open output.bmp
 ```

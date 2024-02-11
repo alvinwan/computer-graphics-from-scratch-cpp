@@ -3,8 +3,10 @@ Raycast 05
 ==========
 Adds reflections
 
+Timing: ~380ms
+
 ```bash
-g++ raytracer-05-reflection.cpp -o main.out -std=c++20
+g++ raytracer-05-reflection.cpp -o main.out -std=c++20 -Ofast
 ./main.out
 open output.bmp
 ```

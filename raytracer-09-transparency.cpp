@@ -4,7 +4,7 @@ Raycast 09 - Transparency
 Adds support for transparency
 
 ```bash
-g++ raytracer-09-transparency.cpp -o main.out -std=c++20
+g++ raytracer-09-transparency.cpp -o main.out -std=c++20 -Ofast
 ./main.out
 open output.bmp
 ```

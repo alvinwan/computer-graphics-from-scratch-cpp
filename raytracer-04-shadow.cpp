@@ -3,8 +3,10 @@ Raycast 04
 ==========
 Adds shadows
 
+Timing: ~160ms
+
 ```bash
-g++ raytracer-04-shadow.cpp -o main.out -std=c++20
+g++ raytracer-04-shadow.cpp -o main.out -std=c++20 -Ofast
 ./main.out
 open output.bmp
 ```
