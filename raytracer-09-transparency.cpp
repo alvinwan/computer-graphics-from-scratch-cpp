@@ -1,10 +1,10 @@
 /*
-Raycast 08 - Constructive Solid Geometry
+Raycast 09 - Transparency
 ========================================
-Adds support for constructive solid geometry
+Adds support for transparency
 
 ```bash
-g++ raytracer-08-csg.cpp -o main.out -std=c++20
+g++ raytracer-09-transparency.cpp -o main.out -std=c++20
 ./main.out
 open output.bmp
 ```
