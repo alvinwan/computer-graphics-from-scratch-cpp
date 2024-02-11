@@ -25,7 +25,6 @@ Implementation for https://gabrielgambetta.com/computer-graphics-from-scratch/de
 
 typedef std::array<double, 3> double3;
 typedef std::array<uint8_t, 3> rgb;
-const rgb BACKGROUND_COLOR = {255, 255, 255};
 
 // Canvas
 
@@ -83,6 +82,16 @@ struct Sphere {
     }
 };
 
+struct Scene {
+    std::vector<Sphere> spheres;
+    rgb background_color;
+
+    Scene(std::vector<Sphere> v_spheres, rgb v_background_color) {
+        spheres = v_spheres;
+        background_color = v_background_color;
+    }
+};
+
 // Convert 2d pixel coordinates to 3d viewport coordinates.
 double3 canvas_to_viewport(int32_t x, int32_t y, int32_t width, int32_t height) {
     return { (double) x / width, (double) y / height, 1 };
@@ -117,25 +126,25 @@ rgb trace_ray(
     double3 direction,
     double min_t,
     double max_t,
-    std::vector<Sphere> spheres
+    Scene scene
 ) {
     double closest_t = INFINITY;
     Sphere closest_sphere;
 
-    for (int i = 0; i < spheres.size(); i++) {
-        std::vector<double> ts = intersect_ray_with_sphere(origin, direction, spheres[i]);
+    for (int i = 0; i < scene.spheres.size(); i++) {
+        std::vector<double> ts = intersect_ray_with_sphere(origin, direction, scene.spheres[i]);
         if (ts[0] < closest_t && min_t < ts[0] && ts[0] < max_t) {
             closest_t = ts[0];
-            closest_sphere = spheres[i];
+            closest_sphere = scene.spheres[i];
         }
         if (ts[1] < closest_t && min_t < ts[1] && ts[1] < max_t) {
             closest_t = ts[1];
-            closest_sphere = spheres[i];
+            closest_sphere = scene.spheres[i];
         }
     }
 
     if (closest_t == INFINITY) {
-        return BACKGROUND_COLOR;
+        return scene.background_color;
     }
 
     rgb color = closest_sphere.color;
@@ -156,12 +165,13 @@ int32_t main() {
         Sphere({2, 0, 4}, 1, {0, 0, 255}),
         Sphere({-2, 0, 4}, 1, {0, 255, 0})
     };
+    Scene scene = Scene(spheres, {255, 255, 255});
 
     for (int32_t x = -width / 2; x < width / 2; x++) {
         for (int32_t y = -height / 2; y < height / 2; y++)
         {
             double3 direction = canvas_to_viewport(x, y, width, height);
-            rgb color = trace_ray(camera, direction, 1.0, INFINITY, spheres);
+            rgb color = trace_ray(camera, direction, 1.0, INFINITY, scene);
             put_pixel(data, width, height, x, y, color);
         }
     }
