@@ -161,7 +161,7 @@ double3 canvas_to_viewport(int32_t x, int32_t y, int32_t width, int32_t height) 
 
 // Computes intersection of ray with spheres. Returns solutions in terms of
 // line parameter t.
-std::array<double, 2> intersect_ray_with_sphere(
+std::vector<double> intersect_ray_with_sphere(
     double3 origin,
     double3 direction,
     Sphere sphere
@@ -194,7 +194,7 @@ std::tuple<Sphere, double> closest_intersection(
     Sphere closest_sphere;
 
     for (int i = 0; i < scene.spheres.size(); i++) {
-        std::array<double, 2> ts = intersect_ray_with_sphere(origin, direction, scene.spheres[i]);
+        std::vector<double> ts = intersect_ray_with_sphere(origin, direction, scene.spheres[i]);
         if (ts[0] < closest_t && min_t < ts[0] && ts[0] < max_t) {
             closest_t = ts[0];
             closest_sphere = scene.spheres[i];
