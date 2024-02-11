@@ -3,7 +3,7 @@ Raycast 08 - Constructive Solid Geometry
 ========================================
 Adds support for constructive solid geometry
 
-Timing: ~2.32s
+Timing: ~2.01s
 
 ```bash
 g++ raytracer-08-csg.cpp -o main.out -std=c++20 -Ofast
@@ -23,7 +23,7 @@ https://gabrielgambetta.com/computer-graphics-from-scratch/05-extending-the-rayt
 typedef std::array<double, 3> double3;
 typedef std::array<double3, 3> double33;
 typedef std::array<uint8_t, 3> rgb;
-const double EPSILON = 0.001f;
+const double EPSILON = 0.001;
 
 // Canvas
 

@@ -20,7 +20,7 @@ Implementation for https://gabrielgambetta.com/computer-graphics-from-scratch/de
 
 typedef std::array<double, 3> double3;
 typedef std::array<uint8_t, 3> rgb;
-const double EPSILON = 0.001f;
+const double EPSILON = 0.001;
 
 // Canvas
 

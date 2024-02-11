@@ -4,7 +4,7 @@ Raycast 07 - Triangles
 Adds support for triangle primitives to the last demo that "Computer Graphics
 from Scratch" has an implementation for (Raytracer 06).
 
-Timing: ~1.36s
+Timing: ~1.21s
 
 ```bash
 g++ raytracer-07-triangles.cpp -o main.out -std=c++20 -Ofast
@@ -24,7 +24,7 @@ https://gabrielgambetta.com/computer-graphics-from-scratch/05-extending-the-rayt
 typedef std::array<double, 3> double3;
 typedef std::array<double3, 3> double33;
 typedef std::array<uint8_t, 3> rgb;
-const double EPSILON = 0.001f;
+const double EPSILON = 0.001;
 
 // Canvas
 
