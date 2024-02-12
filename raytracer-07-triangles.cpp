@@ -4,7 +4,7 @@ Raycast 07 - Triangles
 Adds support for triangle primitives to the last demo that "Computer Graphics
 from Scratch" has an implementation for (Raytracer 06).
 
-Timing: 1.24s
+Timing: 813ms
 
 ```bash
 g++ raytracer-07-triangles.cpp -o main.out -std=c++20 -Ofast
@@ -474,10 +474,7 @@ int32_t main() {
         new Sphere({-2, 0, 4}, 1, {0, 255, 0}, 10, 0.4),
         new Sphere({2, 0, 4}, 1, {0, 0, 255}, 500, 0.3),
         new Sphere({0, -5001, 0}, 5000, {255, 255, 0}, 1000, 0.5),
-        new Triangle({1, 0, 5}, {-1, 0, 5}, {0, 2, 4}, {0, 255, 255}, 500, 0.4),
-        new Triangle({1, 0, 5}, {0, 2, 4}, {0, 2, 6}, {0, 255, 255}, 500, 0.4),
-        new Triangle({1, 0, 5}, {-1, 0, 5}, {0, 2, 6}, {0, 255, 255}, 500, 0.4),
-        new Triangle({-1, 0, 5}, {0, 2, 4}, {0, 2, 6}, {0, 255, 255}, 500, 0.4)
+        new Triangle({2, 0, 6}, {-2, 0, 6}, {0, 2, 4}, {0, 255, 255}, 500, 0.4)
     };
 
     std::vector<Light> lights = {

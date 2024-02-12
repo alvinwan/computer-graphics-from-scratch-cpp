@@ -3,7 +3,7 @@ Raycast 08 - Constructive Solid Geometry
 ========================================
 Adds support for constructive solid geometry
 
-Timing: 2.05s
+Timing: 1.32s
 
 ```bash
 g++ raytracer-08-csg.cpp -o main.out -std=c++20 -Ofast
@@ -300,6 +300,10 @@ struct CSG : Object {
 
     std::vector<float> intersect(float3 origin, float3 direction) {
         std::vector<float> ts1 = object1->intersect(origin, direction);
+        if (ts1[0] == INFINITY) {
+            return {INFINITY};  // For all ops, ray must intersect A
+        }
+
         std::vector<float> ts2 = object2->intersect(origin, direction);
 
         // Objects without volume will only return a single intersection, such
@@ -560,10 +564,7 @@ int32_t main() {
     // Define scene
     std::vector<Object*> objects = {
         new Sphere({0, -5001, 0}, 5000, {255, 255, 0}, 1000, 0.5),
-        new Triangle({1, 0, 5}, {-1, 0, 5}, {0, 2, 4}, {0, 255, 255}, 500, 0.4),
-        new Triangle({1, 0, 5}, {0, 2, 4}, {0, 2, 6}, {0, 255, 255}, 500, 0.4),
-        new Triangle({1, 0, 5}, {-1, 0, 5}, {0, 2, 6}, {0, 255, 255}, 500, 0.4),
-        new Triangle({-1, 0, 5}, {0, 2, 4}, {0, 2, 6}, {0, 255, 255}, 500, 0.4),
+        new Triangle({2, 0, 6}, {-2, 0, 6}, {0, 2, 4}, {0, 255, 255}, 500, 0.4),
         new CSG(
             new Sphere({-2, 0, 4}, 1, {0, 0, 0}, 0, 0),
             new Sphere({-2, 1, 4}, 1, {0, 0, 0}, 0, 0),
