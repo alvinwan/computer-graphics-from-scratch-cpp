@@ -3,6 +3,9 @@ Raycast 09 - Performance Optimization
 ======================================
 Implements single-threaded optimizations:
 - shadow ray early terminates after *any intersection (-10ms)
+- use shadow coherence, test against last intersected object (-5ms)
+
+Timing: 1.90s
 
 ```bash
 g++ raytracer-09-optimization.cpp -o main.out -std=c++20 -Ofast
@@ -390,11 +393,13 @@ struct Scene {
     std::vector<Object*> objects;
     std::vector<Light> lights;
     float3 background_color;
+    int32_t last_shadowing_object_index;
 
     Scene(std::vector<Object*> v_objects, std::vector<Light> v_lights, float3 v_background_color) {
         objects = v_objects;
         lights = v_lights;
         background_color = v_background_color;
+        last_shadowing_object_index = -1;
     }
 };
 
@@ -463,15 +468,27 @@ bool any_intersection(
 ) {
     float closest_t = INFINITY;
     Object* closest_object;
+    int32_t previous_index = scene.last_shadowing_object_index;
 
     for (int i = 0; i < scene.objects.size(); i++) {
-        Object* object = scene.objects[i];
+        int32_t object_index = i;
 
+        // If previous intersected object index is stored, test against that 
+        // object first.
+        if (previous_index > -1) {
+            // In effect, "swap" the intersected object with the first object.
+            if (i == 0) object_index = previous_index;
+            else if (i == previous_index) object_index = 0;
+        }
+
+        // Test intersection against the object at object_index.
+        Object* object = scene.objects[object_index];
         std::vector<float> ts = object->intersect(origin, direction);
         for (int j = 0; j < ts.size(); j++) {
             if (ts[j] < closest_t && min_t < ts[j] && ts[j] < max_t) {
                 closest_t = ts[j];
                 closest_object = object;
+                scene.last_shadowing_object_index = object_index;
                 return true;
             }
         }
