@@ -3,7 +3,7 @@ Raycast 02
 ==========
 Adds lighting on diffuse material
 
-Timing: ~65ms
+Timing: 48ms
 JS: ~110ms
 
 ```bash
@@ -254,7 +254,7 @@ int32_t main() {
         }
     }
 
-    if (write_bmp_file("output.bmp", data, width, height)) {
+    if (std::getenv("OUT") && write_bmp_file("output.bmp", data, width, height)) {
         std::cout << "Image written successfully." << std::endl;
     }
 

@@ -4,7 +4,7 @@ Raycast 07 - Triangles
 Adds support for triangle primitives to the last demo that "Computer Graphics
 from Scratch" has an implementation for (Raytracer 06).
 
-Timing: ~1.21s
+Timing: 1.23s
 
 ```bash
 g++ raytracer-07-triangles.cpp -o main.out -std=c++20 -Ofast
@@ -499,7 +499,7 @@ int32_t main() {
         }
     }
 
-    if (write_bmp_file("output.bmp", data, width, height)) {
+    if (std::getenv("OUT") && write_bmp_file("output.bmp", data, width, height)) {
         std::cout << "Image written successfully." << std::endl;
     }
 

@@ -11,7 +11,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects
 However, it makes the C++ implementation here run much slower (up to 40%) than
 the corresponding Javascript program.
 
-Timing: ~35ms
+Timing: 20ms
 JS: ~120ms
 
 ```bash
@@ -180,7 +180,7 @@ int32_t main() {
         }
     }
 
-    if (write_bmp_file("output.bmp", data, width, height)) {
+    if (std::getenv("OUT") && write_bmp_file("output.bmp", data, width, height)) {
         std::cout << "Image written successfully." << std::endl;
     }
 

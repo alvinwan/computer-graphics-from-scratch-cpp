@@ -3,7 +3,7 @@ Raycast 05
 ==========
 Adds reflections
 
-Timing: ~260ms
+Timing: 269ms
 JS: ~280ms
 
 ```bash
@@ -312,7 +312,7 @@ int32_t main() {
         }
     }
 
-    if (write_bmp_file("output.bmp", data, width, height)) {
+    if (std::getenv("OUT") && write_bmp_file("output.bmp", data, width, height)) {
         std::cout << "Image written successfully." << std::endl;
     }
 

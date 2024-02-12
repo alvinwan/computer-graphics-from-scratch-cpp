@@ -3,7 +3,7 @@ Raycast 03
 ==========
 Adds specular reflections
 
-Timing: ~80ms
+Timing: 65ms
 JS: ~140ms
 
 ```bash
@@ -268,7 +268,7 @@ int32_t main() {
         }
     }
 
-    if (write_bmp_file("output.bmp", data, width, height)) {
+    if (std::getenv("OUT") && write_bmp_file("output.bmp", data, width, height)) {
         std::cout << "Image written successfully." << std::endl;
     }
 

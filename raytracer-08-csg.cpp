@@ -3,7 +3,7 @@ Raycast 08 - Constructive Solid Geometry
 ========================================
 Adds support for constructive solid geometry
 
-Timing: ~2.01s
+Timing: 2.05s
 
 ```bash
 g++ raytracer-08-csg.cpp -o main.out -std=c++20 -Ofast
@@ -599,7 +599,7 @@ int32_t main() {
         }
     }
 
-    if (write_bmp_file("output.bmp", data, width, height)) {
+    if (std::getenv("OUT") && write_bmp_file("output.bmp", data, width, height)) {
         std::cout << "Image written successfully." << std::endl;
     }
 

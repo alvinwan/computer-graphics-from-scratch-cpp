@@ -3,7 +3,7 @@ Raycast 06
 ==========
 Implements arbitrary camera positions
 
-Timing: ~270ms
+Timing: 269ms
 JS: ~300ms
 
 ```bash
@@ -340,7 +340,7 @@ int32_t main() {
         }
     }
 
-    if (write_bmp_file("output.bmp", data, width, height)) {
+    if (std::getenv("OUT") && write_bmp_file("output.bmp", data, width, height)) {
         std::cout << "Image written successfully." << std::endl;
     }
 
