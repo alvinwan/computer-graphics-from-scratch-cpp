@@ -3,7 +3,7 @@ Raycast 02
 ==========
 Adds lighting on diffuse material
 
-Timing: 60ms+
+Timing: ~65ms
 JS: 100ms+
 
 ```bash
@@ -18,7 +18,7 @@ Implementation for https://gabrielgambetta.com/computer-graphics-from-scratch/de
 #include <math.h>
 #include <array>
 
-typedef std::array<double, 3> double3;
+typedef std::array<float, 3> float3;
 typedef std::array<uint8_t, 3> rgb;
 
 // Canvas
@@ -52,48 +52,48 @@ bool put_pixel(
 // Linear Algebra
 
 // Compute dot product between two 3d vectors
-double dot_product(double3 v1, double3 v2) {
+float dot_product(float3 v1, float3 v2) {
     return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
 }
 
 // Length of vector
-double length(double3 vec) {
+float length(float3 vec) {
     return sqrt(dot_product(vec, vec));
 }
 
 // Broadcasted multiply between scalar and a vector
-double3 multiply(double k, double3 vec) {
+float3 multiply(float k, float3 vec) {
     return {k * vec[0], k * vec[1], k * vec[2]};
 }
 
 // Elementwise addition between two 3d vectors
-double3 add(double3 v1, double3 v2) {
+float3 add(float3 v1, float3 v2) {
     return {v1[0] + v2[0], v1[1] + v2[1], v1[2] + v2[2]};
 }
 
 // Elementwise subtraction between two 3d vectors. First minus second.
-double3 subtract(double3 v1, double3 v2) {
+float3 subtract(float3 v1, float3 v2) {
     return {v1[0] - v2[0], v1[1] - v2[1], v1[2] - v2[2]};
 }
 
-rgb clamp(double3 vec) {
+rgb clamp(float3 vec) {
     return {
-        (uint8_t) std::round(std::clamp<double>(vec[0], 0, 255)),
-        (uint8_t) std::round(std::clamp<double>(vec[1], 0, 255)),
-        (uint8_t) std::round(std::clamp<double>(vec[2], 0, 255)),
+        (uint8_t) std::round(std::clamp<float>(vec[0], 0, 255)),
+        (uint8_t) std::round(std::clamp<float>(vec[1], 0, 255)),
+        (uint8_t) std::round(std::clamp<float>(vec[2], 0, 255)),
     };
 }
 
 // Ray tracing
 
 struct Sphere {
-    double3 center;
-    double radius;
-    double3 color;
+    float3 center;
+    float radius;
+    float3 color;
 
     Sphere() {}
 
-    Sphere(const double3& v_center, double v_radius, const double3& v_color) {
+    Sphere(const float3& v_center, float v_radius, const float3& v_color) {
         center = v_center;
         radius = v_radius;
         color = v_color;
@@ -104,12 +104,12 @@ enum LightType {AMBIENT, POINT, DIRECTIONAL};
 
 struct Light {
     LightType ltype;
-    double intensity;
-    double3 position;
+    float intensity;
+    float3 position;
 
     Light() {}
 
-    Light(LightType v_ltype, double v_intensity, const double3& v_position) {
+    Light(LightType v_ltype, float v_intensity, const float3& v_position) {
         ltype = v_ltype;
         intensity = v_intensity;
         position = v_position;
@@ -119,9 +119,9 @@ struct Light {
 struct Scene {
     std::vector<Sphere> spheres;
     std::vector<Light> lights;
-    double3 background_color;
+    float3 background_color;
 
-    Scene(std::vector<Sphere> v_spheres, std::vector<Light> v_lights, double3 v_background_color) {
+    Scene(std::vector<Sphere> v_spheres, std::vector<Light> v_lights, float3 v_background_color) {
         spheres = v_spheres;
         lights = v_lights;
         background_color = v_background_color;
@@ -129,24 +129,24 @@ struct Scene {
 };
 
 // Convert 2d pixel coordinates to 3d viewport coordinates.
-double3 canvas_to_viewport(int32_t x, int32_t y, int32_t width, int32_t height) {
-    return { (double) x / width, (double) y / height, 1 };
+float3 canvas_to_viewport(int32_t x, int32_t y, int32_t width, int32_t height) {
+    return { (float) x / width, (float) y / height, 1 };
 }
 
 // Computes intersection of ray with spheres. Returns solutions in terms of
 // line parameter t.
-std::vector<double> intersect_ray_with_sphere(
-    double3 origin,
-    double3 direction,
+std::vector<float> intersect_ray_with_sphere(
+    float3 origin,
+    float3 direction,
     Sphere sphere
 ) {
-    double3 difference = subtract(origin, sphere.center);
+    float3 difference = subtract(origin, sphere.center);
 
-    double a = dot_product(direction, direction);
-    double b = 2 * dot_product(difference, direction);
-    double c = dot_product(difference, difference) - sphere.radius * sphere.radius;
+    float a = dot_product(direction, direction);
+    float b = 2 * dot_product(difference, direction);
+    float c = dot_product(difference, difference) - sphere.radius * sphere.radius;
 
-    double discriminant = b * b - 4 * a * c;
+    float discriminant = b * b - 4 * a * c;
     if (discriminant < 0) {
         return {INFINITY, INFINITY};
     }
@@ -158,8 +158,8 @@ std::vector<double> intersect_ray_with_sphere(
 }
 
 // Compute lighting for the scene
-double compute_lighting(double3 point, double3 normal, std::vector<Light> lights) {
-    double intensity = 0;
+float compute_lighting(float3 point, float3 normal, std::vector<Light> lights) {
+    float intensity = 0;
     if (abs(length(normal) - 1) > 0.0001) {
         std::cerr << "Error: Normal is not length 1 (" << length(normal) << ")" << std::endl;
         return INFINITY;
@@ -170,14 +170,14 @@ double compute_lighting(double3 point, double3 normal, std::vector<Light> lights
         if (light.ltype == AMBIENT) {
             intensity += light.intensity;
         } else {
-            double3 vec_l;
+            float3 vec_l;
             if (light.ltype == POINT) {
                 vec_l = subtract(light.position, point);
             } else {  // Light.DIRECTIONAL
                 vec_l = light.position;
             }
 
-            double n_dot_l = dot_product(normal, vec_l);
+            float n_dot_l = dot_product(normal, vec_l);
             if (n_dot_l > 0) {
                 intensity += light.intensity * n_dot_l / (length(vec_l));
             }
@@ -188,18 +188,18 @@ double compute_lighting(double3 point, double3 normal, std::vector<Light> lights
 }
 
 // Traces a ray against the spheres in the scene
-double3 trace_ray(
-    double3 origin,
-    double3 direction,
-    double min_t,
-    double max_t,
+float3 trace_ray(
+    float3 origin,
+    float3 direction,
+    float min_t,
+    float max_t,
     Scene scene
 ) {
-    double closest_t = INFINITY;
+    float closest_t = INFINITY;
     Sphere closest_sphere;
 
     for (int i = 0; i < scene.spheres.size(); i++) {
-        std::vector<double> ts = intersect_ray_with_sphere(origin, direction, scene.spheres[i]);
+        std::vector<float> ts = intersect_ray_with_sphere(origin, direction, scene.spheres[i]);
         if (ts[0] < closest_t && min_t < ts[0] && ts[0] < max_t) {
             closest_t = ts[0];
             closest_sphere = scene.spheres[i];
@@ -214,11 +214,11 @@ double3 trace_ray(
         return scene.background_color;
     }
 
-    double3 point = add(origin, multiply(closest_t, direction));
-    double3 normal = subtract(point, closest_sphere.center);
+    float3 point = add(origin, multiply(closest_t, direction));
+    float3 normal = subtract(point, closest_sphere.center);
     normal = multiply(1 / length(normal), normal);
 
-    double intensity = compute_lighting(point, normal, scene.lights);
+    float intensity = compute_lighting(point, normal, scene.lights);
     return multiply(intensity, closest_sphere.color);
 }
 
@@ -229,7 +229,7 @@ int32_t main() {
     uint8_t data[width * height][3];
 
     // Define camera settings
-    double3 camera = {0, 0, 0};
+    float3 camera = {0, 0, 0};
 
     // Define scene
     std::vector<Sphere> spheres = {
@@ -248,8 +248,8 @@ int32_t main() {
     for (int32_t x = -width / 2; x < width / 2; x++) {
         for (int32_t y = -height / 2; y < height / 2; y++)
         {
-            double3 direction = canvas_to_viewport(x, y, width, height);
-            double3 color = trace_ray(camera, direction, 1, INFINITY, scene);
+            float3 direction = canvas_to_viewport(x, y, width, height);
+            float3 color = trace_ray(camera, direction, 1, INFINITY, scene);
             put_pixel(data, width, height, x, y, clamp(color));
         }
     }

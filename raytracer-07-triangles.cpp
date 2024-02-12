@@ -21,10 +21,10 @@ https://gabrielgambetta.com/computer-graphics-from-scratch/05-extending-the-rayt
 #include <math.h>
 #include <array>
 
-typedef std::array<double, 3> double3;
-typedef std::array<double3, 3> double33;
+typedef std::array<float, 3> float3;
+typedef std::array<float3, 3> float33;
 typedef std::array<uint8_t, 3> rgb;
-const double EPSILON = 0.001;
+const float EPSILON = 0.001;
 
 // Canvas
 
@@ -57,33 +57,33 @@ bool put_pixel(
 // Linear Algebra
 
 // Compute dot product between two 3d vectors
-double dot_product(double3 v1, double3 v2) {
+float dot_product(float3 v1, float3 v2) {
     return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
 }
 
 // Length of vector
-double length(double3 vec) {
+float length(float3 vec) {
     return sqrt(dot_product(vec, vec));
 }
 
 // Broadcasted multiply between scalar and a vector
-double3 multiply(double k, double3 vec) {
+float3 multiply(float k, float3 vec) {
     return {k * vec[0], k * vec[1], k * vec[2]};
 }
 
 // Elementwise addition between two 3d vectors
-double3 add(double3 v1, double3 v2) {
+float3 add(float3 v1, float3 v2) {
     return {v1[0] + v2[0], v1[1] + v2[1], v1[2] + v2[2]};
 }
 
 // Elementwise subtraction between two 3d vectors. First minus second.
-double3 subtract(double3 v1, double3 v2) {
+float3 subtract(float3 v1, float3 v2) {
     return {v1[0] - v2[0], v1[1] - v2[1], v1[2] - v2[2]};
 }
 
 // Multiply 3x3 matrix and 3x1 vector
-double3 matmul(double33 matrix, double3 vector) {
-    double3 out = {0, 0, 0};
+float3 matmul(float33 matrix, float3 vector) {
+    float3 out = {0, 0, 0};
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
             out[i] += vector[j] * matrix[i][j];
@@ -93,7 +93,7 @@ double3 matmul(double33 matrix, double3 vector) {
 }
 
 // Implements cross product
-double3 cross_product(double3 v1, double3 v2) {
+float3 cross_product(float3 v1, float3 v2) {
     return {
         v1[1] * v2[2] - v1[2] * v2[1],
         v1[2] * v2[0] - v1[0] * v2[2],
@@ -101,11 +101,11 @@ double3 cross_product(double3 v1, double3 v2) {
     };
 }
 
-rgb clamp(double3 vec) {
+rgb clamp(float3 vec) {
     return {
-        (uint8_t) std::round(std::clamp<double>(vec[0], 0, 255)),
-        (uint8_t) std::round(std::clamp<double>(vec[1], 0, 255)),
-        (uint8_t) std::round(std::clamp<double>(vec[2], 0, 255)),
+        (uint8_t) std::round(std::clamp<float>(vec[0], 0, 255)),
+        (uint8_t) std::round(std::clamp<float>(vec[1], 0, 255)),
+        (uint8_t) std::round(std::clamp<float>(vec[2], 0, 255)),
     };
 }
 
@@ -115,13 +115,13 @@ enum Shape { SPHERE, TRIANGLE, PLANE };
 
 struct Object {
     Shape shape;
-    double3 color;
-    double specular;
-    double reflective;
+    float3 color;
+    float specular;
+    float reflective;
 
     Object() {}
 
-    Object(const double3& v_color, double v_specular, double v_reflective, Shape v_shape) {
+    Object(const float3& v_color, float v_specular, float v_reflective, Shape v_shape) {
         color = v_color;
         specular = v_specular;
         reflective = v_reflective;
@@ -130,23 +130,23 @@ struct Object {
 
     // Computes intersection of a ray with object. Returns solution in terms of
     // line parameter t.
-    virtual std::vector<double> intersect(double3 origin, double3 direction) {
+    virtual std::vector<float> intersect(float3 origin, float3 direction) {
         return {INFINITY};
     }
 
     // Returns normal for a given point on the surface of this object.
-    virtual double3 get_normal_of(double3 point) {
+    virtual float3 get_normal_of(float3 point) {
         return {0, 0, 0};
     }
 };
 
 struct Sphere : Object {
-    double3 center;
-    double radius;
+    float3 center;
+    float radius;
 
     Sphere() {}
 
-    Sphere(const double3& v_center, double v_radius, const double3& v_color, double v_specular, double v_reflective)
+    Sphere(const float3& v_center, float v_radius, const float3& v_color, float v_specular, float v_reflective)
     : Object(v_color, v_specular, v_reflective, SPHERE) {
         center = v_center;
         radius = v_radius;
@@ -154,14 +154,14 @@ struct Sphere : Object {
 
     // Computes intersection of a ray with sphere. Returns solution in terms of
     // line parameter t.
-    std::vector<double> intersect(double3 origin, double3 direction) {
-        double3 difference = subtract(origin, center);
+    std::vector<float> intersect(float3 origin, float3 direction) {
+        float3 difference = subtract(origin, center);
 
-        double a = dot_product(direction, direction);
-        double b = 2 * dot_product(difference, direction);
-        double c = dot_product(difference, difference) - radius * radius;
+        float a = dot_product(direction, direction);
+        float b = 2 * dot_product(difference, direction);
+        float c = dot_product(difference, difference) - radius * radius;
 
-        double discriminant = b * b - 4 * a * c;
+        float discriminant = b * b - 4 * a * c;
         if (discriminant < 0) {
             return {INFINITY, INFINITY};
         }
@@ -172,20 +172,20 @@ struct Sphere : Object {
         };
     }
 
-    double3 get_normal_of(double3 point) {
-        double3 normal = subtract(point, center);
+    float3 get_normal_of(float3 point) {
+        float3 normal = subtract(point, center);
         normal = multiply(1 / length(normal), normal);
         return normal;
     }
 };
 
 struct Plane : Object {
-    double3 normal;
-    double distance;
+    float3 normal;
+    float distance;
 
     Plane() {}
 
-    Plane(double3 v_normal, double v_distance, const double3& v_color, double v_specular, double v_reflective)
+    Plane(float3 v_normal, float v_distance, const float3& v_color, float v_specular, float v_reflective)
     : Object(v_color, v_specular, v_reflective, PLANE) {
         normal = v_normal;
         distance = v_distance;
@@ -193,16 +193,16 @@ struct Plane : Object {
 
     // Computes intersection of a ray with plane. Returns solution in terms of
     // line parameter t.
-    std::vector<double> intersect(double3 origin, double3 direction) {
-        double denominator = dot_product(normal, direction);
+    std::vector<float> intersect(float3 origin, float3 direction) {
+        float denominator = dot_product(normal, direction);
         if (denominator == 0) return {INFINITY};  // Plane is parallel to ray
 
-        double t = -(distance + dot_product(normal, origin)) / denominator;
+        float t = -(distance + dot_product(normal, origin)) / denominator;
         if (t < 0) return {INFINITY}; // Triangle is 'behind' the ray
         return {t};
     }
 
-    double3 get_normal_of(double3 point) {
+    float3 get_normal_of(float3 point) {
         return normal;
     }
 };
@@ -210,19 +210,19 @@ struct Plane : Object {
 // Compute on which side a point lies, relative to the line defined by two
 // points. This is the sign that you would get by computing
 // normal.dot_product(point) - distance.
-double sign(double3 point, double3 a, double3 b, double3 normal) {
-    double3 candidate = subtract(point, a);
-    double3 edge = subtract(b, a);
+float sign(float3 point, float3 a, float3 b, float3 normal) {
+    float3 candidate = subtract(point, a);
+    float3 edge = subtract(b, a);
     return dot_product(normal, cross_product(candidate, edge));
 }
 
 struct Triangle : Object {
-    double3 a;
-    double3 b;
-    double3 c;
+    float3 a;
+    float3 b;
+    float3 c;
     Plane plane;
 
-    Triangle(double3 v_a, double3 v_b, double3 v_c, const double3& v_color, double v_specular, double v_reflective)
+    Triangle(float3 v_a, float3 v_b, float3 v_c, const float3& v_color, float v_specular, float v_reflective)
     : Object(v_color, v_specular, v_reflective, TRIANGLE) {
         a = v_a;
         b = v_b;
@@ -230,33 +230,33 @@ struct Triangle : Object {
 
         // Computes plane containing triangle. Note this is redundant
         // with vertex information but allows us to cache computation.
-        double3 ab = subtract(b, a);
-        double3 ac = subtract(c, a);
-        double3 normal = cross_product(ab, ac);
-        double magnitude = length(normal);
+        float3 ab = subtract(b, a);
+        float3 ac = subtract(c, a);
+        float3 normal = cross_product(ab, ac);
+        float magnitude = length(normal);
         if (magnitude == 0) {
             std::cerr << "Error: Triangle is degenerate (i.e., points are collinear)" << std::endl;
             return;
         }
         normal = multiply(1 / magnitude, normal);
 
-        double distance = -dot_product(normal, a);
+        float distance = -dot_product(normal, a);
         plane = Plane(normal, distance, v_color, v_specular, v_reflective);
     }
 
     // Computes intersection of a ray with triangle. Returns solution in terms
     // of line parameter t.
-    std::vector<double> intersect(double3 origin, double3 direction) {
+    std::vector<float> intersect(float3 origin, float3 direction) {
         // Find intersection between ray and plane
-        double t = plane.intersect(origin, direction)[0];
-        double3 point = add(origin, multiply(t, direction));
+        float t = plane.intersect(origin, direction)[0];
+        float3 point = add(origin, multiply(t, direction));
 
         // Check if the intersection lies in the triangle. NOTE the ordering of
         // points must be consistently clockwise OR counter clockwise, in this
         // calculation.
-        double sign0 = sign(point, a, b, plane.normal);
-        double sign1 = sign(point, b, c, plane.normal);
-        double sign2 = sign(point, c, a, plane.normal);
+        float sign0 = sign(point, a, b, plane.normal);
+        float sign1 = sign(point, b, c, plane.normal);
+        float sign2 = sign(point, c, a, plane.normal);
 
         bool is_inside_cw = (sign0 > 0) && (sign1 > 0) && (sign2 > 0);
         bool is_inside_ccw = (sign0 < 0) && (sign1 < 0) && (sign2 < 0);
@@ -268,7 +268,7 @@ struct Triangle : Object {
         return {INFINITY};
     }
 
-    double3 get_normal_of(double3 point) {
+    float3 get_normal_of(float3 point) {
         return plane.get_normal_of(point);
     }
 };
@@ -277,12 +277,12 @@ enum LightType {AMBIENT, POINT, DIRECTIONAL};
 
 struct Light {
     LightType ltype;
-    double intensity;
-    double3 position;
+    float intensity;
+    float3 position;
 
     Light() {}
 
-    Light(LightType v_ltype, double v_intensity, const double3& v_position) {
+    Light(LightType v_ltype, float v_intensity, const float3& v_position) {
         ltype = v_ltype;
         intensity = v_intensity;
         position = v_position;
@@ -290,10 +290,10 @@ struct Light {
 };
 
 struct Camera {
-    double3 position;
-    double33 rotation;
+    float3 position;
+    float33 rotation;
 
-    Camera(double3 v_position, double33 v_rotation) {
+    Camera(float3 v_position, float33 v_rotation) {
         position = v_position;
         rotation = v_rotation;
     }
@@ -302,9 +302,9 @@ struct Camera {
 struct Scene {
     std::vector<Object*> objects;
     std::vector<Light> lights;
-    double3 background_color;
+    float3 background_color;
 
-    Scene(std::vector<Object*> v_objects, std::vector<Light> v_lights, double3 v_background_color) {
+    Scene(std::vector<Object*> v_objects, std::vector<Light> v_lights, float3 v_background_color) {
         objects = v_objects;
         lights = v_lights;
         background_color = v_background_color;
@@ -312,22 +312,22 @@ struct Scene {
 };
 
 // Convert 2d pixel coordinates to 3d viewport coordinates.
-double3 canvas_to_viewport(int32_t x, int32_t y, int32_t width, int32_t height) {
-    return { (double) x / width, (double) y / height, 1 };
+float3 canvas_to_viewport(int32_t x, int32_t y, int32_t width, int32_t height) {
+    return { (float) x / width, (float) y / height, 1 };
 }
 
 // Holds intersection information for a raycast
 struct Intersection {
     Object object;
-    double3 point;
-    double3 normal;
+    float3 point;
+    float3 normal;
     bool is_valid;
 
     Intersection() {
         is_valid = false;
     }
 
-    Intersection(Object v_object, double3 v_point, double3 v_normal) {
+    Intersection(Object v_object, float3 v_point, float3 v_normal) {
         object = v_object;
         point = v_point;
         normal = v_normal;
@@ -337,19 +337,19 @@ struct Intersection {
 
 // Find the closest intersection between a ray and the spheres in the scene.
 Intersection closest_intersection(
-    double3 origin,
-    double3 direction,
-    double min_t,
-    double max_t,
+    float3 origin,
+    float3 direction,
+    float min_t,
+    float max_t,
     Scene scene
 ) {
-    double closest_t = INFINITY;
+    float closest_t = INFINITY;
     Object* closest_object;
 
     for (int i = 0; i < scene.objects.size(); i++) {
         Object* object = scene.objects[i];
 
-        std::vector<double> ts = object->intersect(origin, direction);
+        std::vector<float> ts = object->intersect(origin, direction);
         for (int j = 0; j < ts.size(); j++) {
             if (ts[j] < closest_t && min_t < ts[j] && ts[j] < max_t) {
                 closest_t = ts[j];
@@ -362,32 +362,32 @@ Intersection closest_intersection(
     if (closest_t == INFINITY) return Intersection();
 
     // sets intersection.is_valid = true
-    double3 point = add(origin, multiply(closest_t, direction));
+    float3 point = add(origin, multiply(closest_t, direction));
     return Intersection(*closest_object, point, closest_object->get_normal_of(point));
 }
 
 // Compute the reflection of a ray on a surface defined by its normal
-double3 reflect_ray(double3 ray, double3 normal) {
+float3 reflect_ray(float3 ray, float3 normal) {
     return subtract(multiply(2 * dot_product(ray, normal), normal), ray);
 }
 
 // Compute lighting for the scene
-double compute_lighting(double3 point, double3 normal, double3 view, double specular, Scene scene) {
-    double intensity = 0;
+float compute_lighting(float3 point, float3 normal, float3 view, float specular, Scene scene) {
+    float intensity = 0;
     if (abs(length(normal) - 1) > 0.0001) {
         std::cerr << "Error: Normal is not length 1 (" << length(normal) << ")" << std::endl;
         return INFINITY;
     }
 
-    double length_v = length(view);
+    float length_v = length(view);
 
     for (int i = 0; i < scene.lights.size(); i++) {
         Light light = scene.lights[i];
         if (light.ltype == AMBIENT) {
             intensity += light.intensity;
         } else {
-            double3 vec_l;
-            double shadow_t_max;
+            float3 vec_l;
+            float shadow_t_max;
 
             if (light.ltype == POINT) {
                 vec_l = subtract(light.position, point);
@@ -402,15 +402,15 @@ double compute_lighting(double3 point, double3 normal, double3 view, double spec
             if (intersection.is_valid) continue;
 
             // Diffuse
-            double n_dot_l = dot_product(normal, vec_l);
+            float n_dot_l = dot_product(normal, vec_l);
             if (n_dot_l > 0) {
                 intensity += light.intensity * n_dot_l / (length(vec_l));
             }
 
             // Specular, where vec_r is the 'perfect' reflection ray
             if (specular != -1) {
-                double3 vec_r = reflect_ray(vec_l, normal);
-                double r_dot_v = dot_product(vec_r, view);
+                float3 vec_r = reflect_ray(vec_l, normal);
+                float r_dot_v = dot_product(vec_r, view);
                 if (r_dot_v > 0) {
                     intensity += light.intensity * pow(r_dot_v / (length(vec_r) * length_v), specular);
                 }
@@ -422,11 +422,11 @@ double compute_lighting(double3 point, double3 normal, double3 view, double spec
 }
 
 // Traces a ray against the spheres in the scene
-double3 trace_ray(
-    double3 origin,
-    double3 direction,
-    double min_t,
-    double max_t,
+float3 trace_ray(
+    float3 origin,
+    float3 direction,
+    float min_t,
+    float max_t,
     int32_t recursion_depth,
     Scene scene
 ) {
@@ -435,23 +435,23 @@ double3 trace_ray(
         return scene.background_color;
     }
 
-    double intensity = compute_lighting(
+    float intensity = compute_lighting(
         intersection.point,
         intersection.normal,
         multiply(-1, direction),
         intersection.object.specular,
         scene);
-    double3 local_color = multiply(intensity, intersection.object.color);
+    float3 local_color = multiply(intensity, intersection.object.color);
 
     // If we hit the recursion limit or the sphere is not reflective, finish
-    double reflective = intersection.object.reflective;
+    float reflective = intersection.object.reflective;
     if (recursion_depth <= 0 || reflective <= 0) {
         return local_color;
     }
 
     // Compute the reflected color
-    double3 reflected_ray = reflect_ray(multiply(-1, direction), intersection.normal);
-    const double3 reflected_color = trace_ray(intersection.point, reflected_ray, EPSILON, INFINITY, recursion_depth - 1, scene);
+    float3 reflected_ray = reflect_ray(multiply(-1, direction), intersection.normal);
+    const float3 reflected_color = trace_ray(intersection.point, reflected_ray, EPSILON, INFINITY, recursion_depth - 1, scene);
 
     return add(multiply(1 - reflective, local_color), multiply(reflective, reflected_color));
 }
@@ -463,8 +463,8 @@ int32_t main() {
     uint8_t data[width * height][3];
 
     // Define camera settings
-    double3 position = {3, 0, 1};
-    double33 rotation = {{
+    float3 position = {3, 0, 1};
+    float33 rotation = {{
         {{0.7071, 0, -0.7071}},
         {{     0, 1,       0}},
         {{0.7071, 0,  0.7071}}
@@ -493,8 +493,8 @@ int32_t main() {
     for (int32_t x = -width / 2; x < width / 2; x++) {
         for (int32_t y = -height / 2; y < height / 2; y++)
         {
-            double3 direction = matmul(camera.rotation, canvas_to_viewport(x, y, width, height));
-            double3 color = trace_ray(camera.position, direction, 1, INFINITY, 3, scene);
+            float3 direction = matmul(camera.rotation, canvas_to_viewport(x, y, width, height));
+            float3 color = trace_ray(camera.position, direction, 1, INFINITY, 3, scene);
             put_pixel(data, width, height, x, y, clamp(color));
         }
     }

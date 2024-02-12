@@ -3,12 +3,12 @@ Raycast 01
 ==========
 Implements a simple raycast in a scene with 3 spheres.
 
-Note the use of double precision to match Javascript's default fp64 number
+Note the use of float precision to match Javascript's default fp64 number
 format, per MDN's web docs; this turns out to be necessary later on to avoid
 shadow acne in Raytracer 04:
 https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number#number_encoding
 
-Timing: 30ms+
+Timing: ~35ms
 JS: 115ms+
 
 ```bash
@@ -23,7 +23,7 @@ Implementation for https://gabrielgambetta.com/computer-graphics-from-scratch/de
 #include <math.h>
 #include <array>
 
-typedef std::array<double, 3> double3;
+typedef std::array<float, 3> float3;
 typedef std::array<uint8_t, 3> rgb;
 
 // Canvas
@@ -57,25 +57,25 @@ bool put_pixel(
 // Linear Algebra
 
 // Compute dot product between two 3d vectors
-double dot_product(double3 v1, double3 v2) {
+float dot_product(float3 v1, float3 v2) {
     return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
 }
 
 // Elementwise subtraction between two 3d vectors. First minus second.
-double3 subtract(double3 v1, double3 v2) {
+float3 subtract(float3 v1, float3 v2) {
     return {v1[0] - v2[0], v1[1] - v2[1], v1[2] - v2[2]};
 }
 
 // Ray tracing
 
 struct Sphere {
-    double3 center;
-    double radius;
+    float3 center;
+    float radius;
     rgb color;
 
     Sphere() {}
 
-    Sphere(const double3& v_center, double v_radius, const rgb& v_color) {
+    Sphere(const float3& v_center, float v_radius, const rgb& v_color) {
         center = v_center;
         radius = v_radius;
         color = v_color;
@@ -93,24 +93,24 @@ struct Scene {
 };
 
 // Convert 2d pixel coordinates to 3d viewport coordinates.
-double3 canvas_to_viewport(int32_t x, int32_t y, int32_t width, int32_t height) {
-    return { (double) x / width, (double) y / height, 1 };
+float3 canvas_to_viewport(int32_t x, int32_t y, int32_t width, int32_t height) {
+    return { (float) x / width, (float) y / height, 1 };
 }
 
 // Computes intersection of ray with spheres. Returns solutions in terms of
 // line parameter t.
-std::vector<double> intersect_ray_with_sphere(
-    double3 origin,
-    double3 direction,
+std::vector<float> intersect_ray_with_sphere(
+    float3 origin,
+    float3 direction,
     Sphere sphere
 ) {
-    double3 difference = subtract(origin, sphere.center);
+    float3 difference = subtract(origin, sphere.center);
 
-    double a = dot_product(direction, direction);
-    double b = 2 * dot_product(difference, direction);
-    double c = dot_product(difference, difference) - sphere.radius * sphere.radius;
+    float a = dot_product(direction, direction);
+    float b = 2 * dot_product(difference, direction);
+    float c = dot_product(difference, difference) - sphere.radius * sphere.radius;
 
-    double discriminant = b * b - 4 * a * c;
+    float discriminant = b * b - 4 * a * c;
     if (discriminant < 0) {
         return {INFINITY, INFINITY};
     }
@@ -123,17 +123,17 @@ std::vector<double> intersect_ray_with_sphere(
 
 // Traces a ray against the spheres in the scene
 rgb trace_ray(
-    double3 origin,
-    double3 direction,
-    double min_t,
-    double max_t,
+    float3 origin,
+    float3 direction,
+    float min_t,
+    float max_t,
     Scene scene
 ) {
-    double closest_t = INFINITY;
+    float closest_t = INFINITY;
     Sphere closest_sphere;
 
     for (int i = 0; i < scene.spheres.size(); i++) {
-        std::vector<double> ts = intersect_ray_with_sphere(origin, direction, scene.spheres[i]);
+        std::vector<float> ts = intersect_ray_with_sphere(origin, direction, scene.spheres[i]);
         if (ts[0] < closest_t && min_t < ts[0] && ts[0] < max_t) {
             closest_t = ts[0];
             closest_sphere = scene.spheres[i];
@@ -158,7 +158,7 @@ int32_t main() {
     uint8_t data[width * height][3];
 
     // Define camera settings
-    double3 camera = {0, 0, 0};
+    float3 camera = {0, 0, 0};
 
     // Define scene
     std::vector<Sphere> spheres = {
@@ -171,7 +171,7 @@ int32_t main() {
     for (int32_t x = -width / 2; x < width / 2; x++) {
         for (int32_t y = -height / 2; y < height / 2; y++)
         {
-            double3 direction = canvas_to_viewport(x, y, width, height);
+            float3 direction = canvas_to_viewport(x, y, width, height);
             rgb color = trace_ray(camera, direction, 1, INFINITY, scene);
             put_pixel(data, width, height, x, y, color);
         }
