@@ -5,7 +5,7 @@ Implements single-threaded optimizations:
 - shadow ray early terminates after *any intersection
 - use shadow coherence, test against last intersected object
 
-Timing: 1.72s
+Timing: 2.00s
 
 ```bash
 g++ raytracer-09-optimization.cpp -o main.out -std=c++20 -Ofast
