@@ -4,7 +4,7 @@ Raycast 02
 Adds lighting on diffuse material
 
 Timing: ~65ms
-JS: 100ms+
+JS: ~110ms
 
 ```bash
 g++ raytracer-02-diffuse.cpp -o main.out -std=c++20 -Ofast

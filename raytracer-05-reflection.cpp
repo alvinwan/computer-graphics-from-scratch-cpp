@@ -4,7 +4,7 @@ Raycast 05
 Adds reflections
 
 Timing: ~280ms
-JS: 270ms+
+JS: ~280ms
 
 ```bash
 g++ raytracer-05-reflection.cpp -o main.out -std=c++20 -Ofast

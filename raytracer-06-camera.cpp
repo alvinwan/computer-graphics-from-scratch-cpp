@@ -4,7 +4,7 @@ Raycast 06
 Implements arbitrary camera positions
 
 Timing: ~270ms
-JS: 300ms+
+JS: ~300ms
 
 ```bash
 g++ raytracer-06-camera.cpp -o main.out -std=c++20 -Ofast

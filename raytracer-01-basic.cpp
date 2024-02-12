@@ -3,13 +3,16 @@ Raycast 01
 ==========
 Implements a simple raycast in a scene with 3 spheres.
 
-Note the use of float precision to match Javascript's default fp64 number
-format, per MDN's web docs; this turns out to be necessary later on to avoid
-shadow acne in Raytracer 04:
+In theory, we'd need to use double precision to match Javascript's default fp64
+number format, per MDN's web docs; this turns out to be necessary later on to
+avoid shadow acne in Raytracer 04:
 https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number#number_encoding
 
+However, it makes the C++ implementation here run much slower (up to 40%) than
+the corresponding Javascript program.
+
 Timing: ~35ms
-JS: 115ms+
+JS: ~120ms
 
 ```bash
 g++ raytracer-01-basic.cpp -o main.out -std=c++20 -Ofast

@@ -4,7 +4,7 @@ Raycast 03
 Adds specular reflections
 
 Timing: ~80ms
-JS: 135ms+
+JS: ~140ms
 
 ```bash
 g++ raytracer-03-specular.cpp -o main.out -std=c++20 -Ofast
