@@ -33,3 +33,5 @@
 
 *.bmp
 .vscode
+.DS_Store
+*.trace
