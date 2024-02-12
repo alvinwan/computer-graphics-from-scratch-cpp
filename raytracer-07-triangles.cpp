@@ -4,7 +4,7 @@ Raycast 07 - Triangles
 Adds support for triangle primitives to the last demo that "Computer Graphics
 from Scratch" has an implementation for (Raytracer 06).
 
-Timing: 1.23s
+Timing: 1.06s
 
 ```bash
 g++ raytracer-07-triangles.cpp -o main.out -std=c++20 -Ofast
@@ -195,7 +195,8 @@ struct Plane : Object {
     // line parameter t.
     std::vector<float> intersect(float3 origin, float3 direction) {
         float denominator = dot_product(normal, direction);
-        if (denominator == 0) return {INFINITY};  // Plane is parallel to ray
+        // Plane is parallel to ray (=0) or we're looking at back side (<0)
+        if (denominator <= 0) return {INFINITY};
 
         float t = -(distance + dot_product(normal, origin)) / denominator;
         if (t < 0) return {INFINITY}; // Triangle is 'behind' the ray

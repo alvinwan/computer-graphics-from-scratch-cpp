@@ -3,7 +3,7 @@ Raycast 08 - Constructive Solid Geometry
 ========================================
 Adds support for constructive solid geometry
 
-Timing: 2.05s
+Timing: 1.75s
 
 ```bash
 g++ raytracer-08-csg.cpp -o main.out -std=c++20 -Ofast
@@ -197,7 +197,8 @@ struct Plane : Object {
     // line parameter t.
     std::vector<float> intersect(float3 origin, float3 direction) {
         float denominator = dot_product(normal, direction);
-        if (denominator == 0) return {INFINITY};  // Plane is parallel to ray
+        // Plane is parallel to ray (=0) or we're looking at back side (<0)
+        if (denominator <= 0) return {INFINITY};
 
         float t = -(distance + dot_product(normal, origin)) / denominator;
         if (t < 0) return {INFINITY}; // Triangle is 'behind' the ray
