@@ -2,10 +2,11 @@
 Raycast 09 - Performance Optimization
 ======================================
 Implements single-threaded optimizations:
-- shadow ray early terminates after *any intersection
-- use shadow coherence, test against last intersected object
+- shadow ray early terminates after *any intersection (-3 ms)
+- use shadow coherence, test against last intersected object (-2 ms)
+- cache immutable values (-2 ms)
 
-Timing: 2.00s
+Timing: 1.98s
 
 ```bash
 g++ raytracer-09-optimization.cpp -o main.out -std=c++20 -Ofast
@@ -144,6 +145,7 @@ struct Object {
 struct Sphere : Object {
     float3 center;
     float radius;
+    float radius_squared;
 
     Sphere() {}
 
@@ -151,6 +153,7 @@ struct Sphere : Object {
     : Object(v_color, v_specular, v_reflective) {
         center = v_center;
         radius = v_radius;
+        radius_squared = v_radius * v_radius;
     }
 
     // Computes intersection of a ray with sphere. Returns solution in terms of
@@ -160,7 +163,7 @@ struct Sphere : Object {
 
         float a = dot_product(direction, direction);
         float b = 2 * dot_product(difference, direction);
-        float c = dot_product(difference, difference) - radius * radius;
+        float c = dot_product(difference, difference) - radius_squared;
 
         float discriminant = b * b - 4 * a * c;
         if (discriminant < 0) {
