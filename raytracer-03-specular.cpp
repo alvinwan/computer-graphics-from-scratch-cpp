@@ -52,13 +52,13 @@ bool put_pixel(
 // Linear Algebra
 
 // Compute dot product between two 3d vectors
-double dot(double3 v1, double3 v2) {
+double dot_product(double3 v1, double3 v2) {
     return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
 }
 
 // Length of vector
 double length(double3 vec) {
-    return sqrt(dot(vec, vec));
+    return sqrt(dot_product(vec, vec));
 }
 
 // Broadcasted multiply between scalar and a vector
@@ -67,13 +67,13 @@ double3 multiply(double k, double3 vec) {
 }
 
 // Elementwise addition between two 3d vectors
-double3 add(double3 a, double3 b) {
-    return {a[0] + b[0], a[1] + b[1], a[2] + b[2]};
+double3 add(double3 v1, double3 v2) {
+    return {v1[0] + v2[0], v1[1] + v2[1], v1[2] + v2[2]};
 }
 
-// Elementwise subtraction between two 3d vectors
-double3 subtract(double3 a, double3 b) {
-    return {a[0] - b[0], a[1] - b[1], a[2] - b[2]};
+// Elementwise subtraction between two 3d vectors. First minus second.
+double3 subtract(double3 v1, double3 v2) {
+    return {v1[0] - v2[0], v1[1] - v2[1], v1[2] - v2[2]};
 }
 
 rgb clamp(double3 vec) {
@@ -144,9 +144,9 @@ std::vector<double> intersect_ray_with_sphere(
 ) {
     double3 difference = subtract(origin, sphere.center);
 
-    double a = dot(direction, direction);
-    double b = 2 * dot(difference, direction);
-    double c = dot(difference, difference) - sphere.radius * sphere.radius;
+    double a = dot_product(direction, direction);
+    double b = 2 * dot_product(difference, direction);
+    double c = dot_product(difference, difference) - sphere.radius * sphere.radius;
 
     double discriminant = b * b - 4 * a * c;
     if (discriminant < 0) {
@@ -182,15 +182,15 @@ double compute_lighting(double3 point, double3 normal, double3 view, double spec
             }
 
             // Diffuse
-            double n_dot_l = dot(normal, vec_l);
+            double n_dot_l = dot_product(normal, vec_l);
             if (n_dot_l > 0) {
                 intensity += light.intensity * n_dot_l / (length(vec_l));
             }
 
             // Specular, where vec_r is the 'perfect' reflection ray
             if (specular != -1) {
-                double3 vec_r = subtract(multiply(2 * dot(normal, vec_l), normal), vec_l);
-                double r_dot_v = dot(vec_r, view);
+                double3 vec_r = subtract(multiply(2 * dot_product(normal, vec_l), normal), vec_l);
+                double r_dot_v = dot_product(vec_r, view);
                 if (r_dot_v > 0) {
                     intensity += light.intensity * pow(r_dot_v / (length(vec_r) * length_v), specular);
                 }

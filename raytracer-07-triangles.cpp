@@ -57,13 +57,13 @@ bool put_pixel(
 // Linear Algebra
 
 // Compute dot product between two 3d vectors
-double dot(double3 v1, double3 v2) {
+double dot_product(double3 v1, double3 v2) {
     return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
 }
 
 // Length of vector
 double length(double3 vec) {
-    return sqrt(dot(vec, vec));
+    return sqrt(dot_product(vec, vec));
 }
 
 // Broadcasted multiply between scalar and a vector
@@ -72,13 +72,13 @@ double3 multiply(double k, double3 vec) {
 }
 
 // Elementwise addition between two 3d vectors
-double3 add(double3 a, double3 b) {
-    return {a[0] + b[0], a[1] + b[1], a[2] + b[2]};
+double3 add(double3 v1, double3 v2) {
+    return {v1[0] + v2[0], v1[1] + v2[1], v1[2] + v2[2]};
 }
 
-// Elementwise subtraction between two 3d vectors
-double3 subtract(double3 a, double3 b) {
-    return {a[0] - b[0], a[1] - b[1], a[2] - b[2]};
+// Elementwise subtraction between two 3d vectors. First minus second.
+double3 subtract(double3 v1, double3 v2) {
+    return {v1[0] - v2[0], v1[1] - v2[1], v1[2] - v2[2]};
 }
 
 // Multiply 3x3 matrix and 3x1 vector
@@ -93,11 +93,11 @@ double3 matmul(double33 matrix, double3 vector) {
 }
 
 // Implements cross product
-double3 cross_product(double3 a, double3 b) {
+double3 cross_product(double3 v1, double3 v2) {
     return {
-        a[1] * b[2] - a[2] * b[1],
-        a[2] * b[0] - a[0] * b[2],
-        a[0] * b[1] - a[1] * b[0]
+        v1[1] * v2[2] - v1[2] * v2[1],
+        v1[2] * v2[0] - v1[0] * v2[2],
+        v1[0] * v2[1] - v1[1] * v2[0]
     };
 }
 
@@ -157,9 +157,9 @@ struct Sphere : Object {
     std::vector<double> intersect(double3 origin, double3 direction) {
         double3 difference = subtract(origin, center);
 
-        double a = dot(direction, direction);
-        double b = 2 * dot(difference, direction);
-        double c = dot(difference, difference) - radius * radius;
+        double a = dot_product(direction, direction);
+        double b = 2 * dot_product(difference, direction);
+        double c = dot_product(difference, difference) - radius * radius;
 
         double discriminant = b * b - 4 * a * c;
         if (discriminant < 0) {
@@ -194,10 +194,10 @@ struct Plane : Object {
     // Computes intersection of a ray with plane. Returns solution in terms of
     // line parameter t.
     std::vector<double> intersect(double3 origin, double3 direction) {
-        double denominator = dot(normal, direction);
+        double denominator = dot_product(normal, direction);
         if (denominator == 0) return {INFINITY};  // Plane is parallel to ray
 
-        double t = -(distance + dot(normal, origin)) / denominator;
+        double t = -(distance + dot_product(normal, origin)) / denominator;
         if (t < 0) return {INFINITY}; // Triangle is 'behind' the ray
         return {t};
     }
@@ -209,11 +209,11 @@ struct Plane : Object {
 
 // Compute on which side a point lies, relative to the line defined by two
 // points. This is the sign that you would get by computing
-// normal.dot(point) - distance.
+// normal.dot_product(point) - distance.
 double sign(double3 point, double3 a, double3 b, double3 normal) {
     double3 candidate = subtract(point, a);
     double3 edge = subtract(b, a);
-    return dot(normal, cross_product(candidate, edge));
+    return dot_product(normal, cross_product(candidate, edge));
 }
 
 struct Triangle : Object {
@@ -240,7 +240,7 @@ struct Triangle : Object {
         }
         normal = multiply(1 / magnitude, normal);
 
-        double distance = -dot(normal, a);
+        double distance = -dot_product(normal, a);
         plane = Plane(normal, distance, v_color, v_specular, v_reflective);
     }
 
@@ -368,7 +368,7 @@ Intersection closest_intersection(
 
 // Compute the reflection of a ray on a surface defined by its normal
 double3 reflect_ray(double3 ray, double3 normal) {
-    return subtract(multiply(2 * dot(ray, normal), normal), ray);
+    return subtract(multiply(2 * dot_product(ray, normal), normal), ray);
 }
 
 // Compute lighting for the scene
@@ -402,7 +402,7 @@ double compute_lighting(double3 point, double3 normal, double3 view, double spec
             if (intersection.is_valid) continue;
 
             // Diffuse
-            double n_dot_l = dot(normal, vec_l);
+            double n_dot_l = dot_product(normal, vec_l);
             if (n_dot_l > 0) {
                 intensity += light.intensity * n_dot_l / (length(vec_l));
             }
@@ -410,7 +410,7 @@ double compute_lighting(double3 point, double3 normal, double3 view, double spec
             // Specular, where vec_r is the 'perfect' reflection ray
             if (specular != -1) {
                 double3 vec_r = reflect_ray(vec_l, normal);
-                double r_dot_v = dot(vec_r, view);
+                double r_dot_v = dot_product(vec_r, view);
                 if (r_dot_v > 0) {
                     intensity += light.intensity * pow(r_dot_v / (length(vec_r) * length_v), specular);
                 }
