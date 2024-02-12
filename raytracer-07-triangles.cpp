@@ -111,21 +111,17 @@ rgb clamp(float3 vec) {
 
 // Ray tracing
 
-enum Shape { SPHERE, TRIANGLE, PLANE };
-
 struct Object {
-    Shape shape;
     float3 color;
     float specular;
     float reflective;
 
     Object() {}
 
-    Object(const float3& v_color, float v_specular, float v_reflective, Shape v_shape) {
+    Object(const float3& v_color, float v_specular, float v_reflective) {
         color = v_color;
         specular = v_specular;
         reflective = v_reflective;
-        shape = v_shape;
     }
 
     // Computes intersection of a ray with object. Returns solution in terms of
@@ -147,7 +143,7 @@ struct Sphere : Object {
     Sphere() {}
 
     Sphere(const float3& v_center, float v_radius, const float3& v_color, float v_specular, float v_reflective)
-    : Object(v_color, v_specular, v_reflective, SPHERE) {
+    : Object(v_color, v_specular, v_reflective) {
         center = v_center;
         radius = v_radius;
     }
@@ -186,7 +182,7 @@ struct Plane : Object {
     Plane() {}
 
     Plane(float3 v_normal, float v_distance, const float3& v_color, float v_specular, float v_reflective)
-    : Object(v_color, v_specular, v_reflective, PLANE) {
+    : Object(v_color, v_specular, v_reflective) {
         normal = v_normal;
         distance = v_distance;
     }
@@ -224,7 +220,7 @@ struct Triangle : Object {
     Plane plane;
 
     Triangle(float3 v_a, float3 v_b, float3 v_c, const float3& v_color, float v_specular, float v_reflective)
-    : Object(v_color, v_specular, v_reflective, TRIANGLE) {
+    : Object(v_color, v_specular, v_reflective) {
         a = v_a;
         b = v_b;
         c = v_c;
@@ -474,7 +470,7 @@ int32_t main() {
         new Sphere({-2, 0, 4}, 1, {0, 255, 0}, 10, 0.4),
         new Sphere({2, 0, 4}, 1, {0, 0, 255}, 500, 0.3),
         new Sphere({0, -5001, 0}, 5000, {255, 255, 0}, 1000, 0.5),
-        new Triangle({2, 0, 6}, {-2, 0, 6}, {0, 2, 4}, {0, 255, 255}, 500, 0.4)
+        // new Triangle({2, 0, 6}, {-2, 0, 6}, {0, 2, 4}, {0, 255, 255}, 500, 0.4)
     };
 
     std::vector<Light> lights = {
