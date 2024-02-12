@@ -2,8 +2,8 @@
 Raycast 09 - Performance Optimization
 ======================================
 Implements single-threaded optimizations:
-- shadow ray early terminates after *any intersection (-10ms)
-- use shadow coherence, test against last intersected object (-5ms)
+- shadow ray early terminates after *any intersection
+- use shadow coherence, test against last intersected object
 
 Timing: 1.72s
 
@@ -200,7 +200,7 @@ struct Plane : Object {
     std::vector<float> intersect(float3 origin, float3 direction) {
         float denominator = dot_product(normal, direction);
         // Plane is parallel to ray (=0) or we're looking at back side (<0)
-        if (denominator <= 0) return {INFINITY};
+        if (denominator >= 0) return {INFINITY};
 
         float t = -(distance + dot_product(normal, origin)) / denominator;
         if (t < 0) return {INFINITY}; // Triangle is 'behind' the ray
@@ -262,20 +262,17 @@ struct Triangle : Object {
 
         // Check if the intersection lies in the triangle. NOTE the ordering of
         // points must be consistently clockwise OR counter clockwise, in this
-        // calculation.
-        float sign0 = sign(point, a, b, plane.normal);
-        float sign1 = sign(point, b, c, plane.normal);
-        float sign2 = sign(point, c, a, plane.normal);
+        // calculation. If *any sign is negative, ray does not intersect the
+        // triangle.
+        if (sign(point, a, b, plane.normal) >= 0) return {INFINITY};
+        if (sign(point, b, c, plane.normal) >= 0) return {INFINITY};
+        if (sign(point, c, a, plane.normal) >= 0) return {INFINITY};
 
-        bool is_inside_cw = (sign0 > 0) && (sign1 > 0) && (sign2 > 0);
-        bool is_inside_ccw = (sign0 < 0) && (sign1 < 0) && (sign2 < 0);
-        if (is_inside_cw || is_inside_ccw) {
-            return {t};
-        }
-
-        // If not in the triangle, ray does not intersect
-        return {INFINITY};
+        // The intersection point lies in the 'correct' half plane for every
+        // edge, so it lies in the triangle.
+        return {t};
     }
+
 
     float3 get_normal_of(float3 point) {
         return plane.get_normal_of(point);
