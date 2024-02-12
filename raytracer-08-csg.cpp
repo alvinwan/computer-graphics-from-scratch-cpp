@@ -462,7 +462,7 @@ double3 reflect_ray(double3 ray, double3 normal) {
 // Compute lighting for the scene
 double compute_lighting(double3 point, double3 normal, double3 view, double specular, Scene scene) {
     double intensity = 0;
-    if (abs(length(normal) - 1) > 0.0001f) {
+    if (abs(length(normal) - 1) > 0.0001) {
         std::cerr << "Error: Normal is not length 1 (" << length(normal) << ")" << std::endl;
         return INFINITY;
     }
@@ -561,7 +561,7 @@ int32_t main() {
 
     // Define scene
     std::vector<Object*> objects = {
-        new Sphere({0, -5001, 0}, 5000, {255, 255, 0}, 1000, 0.5f),
+        new Sphere({0, -5001, 0}, 5000, {255, 255, 0}, 1000, 0.5),
         new Triangle({1, 0, 5}, {-1, 0, 5}, {0, 2, 4}, {0, 255, 255}, 500, 0.4),
         new Triangle({1, 0, 5}, {0, 2, 4}, {0, 2, 6}, {0, 255, 255}, 500, 0.4),
         new Triangle({1, 0, 5}, {-1, 0, 5}, {0, 2, 6}, {0, 255, 255}, 500, 0.4),

@@ -78,9 +78,9 @@ double3 subtract(double3 a, double3 b) {
 
 rgb clamp(double3 vec) {
     return {
-        (uint8_t) std::round(std::clamp<double>(vec[0], 0.0, 255.0)),
-        (uint8_t) std::round(std::clamp<double>(vec[1], 0.0, 255.0)),
-        (uint8_t) std::round(std::clamp<double>(vec[2], 0.0, 255.0)),
+        (uint8_t) std::round(std::clamp<double>(vec[0], 0, 255)),
+        (uint8_t) std::round(std::clamp<double>(vec[1], 0, 255)),
+        (uint8_t) std::round(std::clamp<double>(vec[2], 0, 255)),
     };
 }
 
@@ -162,7 +162,7 @@ std::vector<double> intersect_ray_with_sphere(
 // Compute lighting for the scene
 double compute_lighting(double3 point, double3 normal, double3 view, double specular, Scene scene) {
     double intensity = 0;
-    if (abs(length(normal) - 1.0f) > 0.0001f) {
+    if (abs(length(normal) - 1) > 0.0001) {
         std::cerr << "Error: Normal is not length 1 (" << length(normal) << ")" << std::endl;
         return INFINITY;
     }
@@ -230,7 +230,7 @@ double3 trace_ray(
 
     double3 point = add(origin, multiply(closest_t, direction));
     double3 normal = subtract(point, closest_sphere.center);
-    normal = multiply(1.0f / length(normal), normal);
+    normal = multiply(1 / length(normal), normal);
 
     double intensity = compute_lighting(point, normal, multiply(-1, direction), closest_sphere.specular, scene);
     return multiply(intensity, closest_sphere.color);
@@ -263,7 +263,7 @@ int32_t main() {
         for (int32_t y = -height / 2; y < height / 2; y++)
         {
             double3 direction = canvas_to_viewport(x, y, width, height);
-            double3 color = trace_ray(camera, direction, 1.0, INFINITY, scene);
+            double3 color = trace_ray(camera, direction, 1, INFINITY, scene);
             put_pixel(data, width, height, x, y, clamp(color));
         }
     }

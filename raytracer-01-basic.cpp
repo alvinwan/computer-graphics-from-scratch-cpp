@@ -172,7 +172,7 @@ int32_t main() {
         for (int32_t y = -height / 2; y < height / 2; y++)
         {
             double3 direction = canvas_to_viewport(x, y, width, height);
-            rgb color = trace_ray(camera, direction, 1.0, INFINITY, scene);
+            rgb color = trace_ray(camera, direction, 1, INFINITY, scene);
             put_pixel(data, width, height, x, y, color);
         }
     }

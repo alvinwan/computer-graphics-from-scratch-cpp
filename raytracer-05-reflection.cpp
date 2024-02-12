@@ -79,9 +79,9 @@ double3 subtract(double3 a, double3 b) {
 
 rgb clamp(double3 vec) {
     return {
-        (uint8_t) std::round(std::clamp<double>(vec[0], 0, 255.0)),
-        (uint8_t) std::round(std::clamp<double>(vec[1], 0, 255.0)),
-        (uint8_t) std::round(std::clamp<double>(vec[2], 0, 255.0)),
+        (uint8_t) std::round(std::clamp<double>(vec[0], 0, 255)),
+        (uint8_t) std::round(std::clamp<double>(vec[1], 0, 255)),
+        (uint8_t) std::round(std::clamp<double>(vec[2], 0, 255)),
     };
 }
 
@@ -196,7 +196,7 @@ double3 reflect_ray(double3 ray, double3 normal) {
 // Compute lighting for the scene
 double compute_lighting(double3 point, double3 normal, double3 view, double specular, Scene scene) {
     double intensity = 0;
-    if (abs(length(normal) - 1) > 0.0001f) {
+    if (abs(length(normal) - 1) > 0.0001) {
         std::cerr << "Error: Normal is not length 1 (" << length(normal) << ")" << std::endl;
         return INFINITY;
     }
