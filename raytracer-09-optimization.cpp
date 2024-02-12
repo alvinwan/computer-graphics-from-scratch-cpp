@@ -2,11 +2,12 @@
 Raycast 09 - Performance Optimization
 ======================================
 Implements single-threaded optimizations:
-- shadow ray early terminates after *any intersection (-3 ms)
-- use shadow coherence, test against last intersected object (-2 ms)
-- cache immutable values (-2 ms)
+- shadow ray early terminates after *any intersection (-5 ms)
+- use shadow coherence, test against last intersected object
+- cache immutable values
+- bounding volume hierarchy using manually defined bounding spheres (-25ms)
 
-Timing: 1.98s
+Timing: 1.72s
 
 ```bash
 g++ raytracer-09-optimization.cpp -o main.out -std=c++20 -Ofast
@@ -364,6 +365,31 @@ struct CSG : Object {
     }
 };
 
+struct BoundingSphere : Sphere {
+    Object* object;
+
+    BoundingSphere(Object* v_object, const float3& v_center, float v_radius, const float3& v_color, float v_specular, float v_reflective) 
+    : Sphere(v_center, v_radius, v_color, v_specular, v_reflective) {
+        object = v_object;
+    }
+
+    std::vector<float> intersect(float3 origin, float3 direction) {
+        std::vector<float> ts = Sphere::intersect(origin, direction);
+        if (ts[0] == INFINITY) {
+            // If we failed to intersect this bounding sphere, the ray
+            // *definitely does not intersect the objects contained within.
+            return {INFINITY};
+        }
+        // If the ray *does intersect this bounding sphere, actually perform
+        // intersection test against the constituent objects.
+        return object->intersect(origin, direction);
+    }
+
+    float3 get_normal_of(float3 point) {
+        return object->get_normal_of(point);
+    }
+};
+
 enum LightType {AMBIENT, POINT, DIRECTIONAL};
 
 struct Light {
@@ -609,15 +635,21 @@ int32_t main() {
         new Triangle({1, 0, 5}, {0, 2, 4}, {0, 2, 6}, {0, 255, 255}, 500, 0.4),
         new Triangle({1, 0, 5}, {-1, 0, 5}, {0, 2, 6}, {0, 255, 255}, 500, 0.4),
         new Triangle({-1, 0, 5}, {0, 2, 4}, {0, 2, 6}, {0, 255, 255}, 500, 0.4),
-        new CSG(
-            new Sphere({-2, 0, 4}, 1, {0, 0, 0}, 0, 0),
-            new Sphere({-2, 1, 4}, 1, {0, 0, 0}, 0, 0),
-            OR, {0, 255, 0}, 10, 0.4
+        new BoundingSphere(
+            new CSG(
+                new Sphere({-2, 0, 4}, 1, {0, 0, 0}, 0, 0),
+                new Sphere({-2, 1, 4}, 1, {0, 0, 0}, 0, 0),
+                OR, {0, 0, 0}, 0, 0
+            ),
+            {-2, 0.5, 4}, 1.5, {0, 255, 0}, 10, 0.4
         ),
-        new CSG(
-            new Sphere({0, -1, 3}, 1, {0, 0, 0}, 0, 0),
-            new Sphere({0, 0, 3}, 1, {0, 0, 0}, 0, 0),
-            AND, {255, 0, 0}, 500, 0.2f
+        new BoundingSphere(
+            new CSG(
+                new Sphere({0, -1, 3}, 1, {0, 0, 0}, 0, 0),
+                new Sphere({0, 0, 3}, 1, {0, 0, 0}, 0, 0),
+                AND, {0, 0, 0}, 0, 0
+            ),
+            {0, -0.5, 3}, 1, {255, 0, 0}, 500, 0.2f
         ),
         new CSG(
             new Sphere({2, 0, 4}, 1, {0, 0, 0}, 0, 0),
