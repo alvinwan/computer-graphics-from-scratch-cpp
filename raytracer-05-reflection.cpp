@@ -3,7 +3,7 @@ Raycast 05
 ==========
 Adds reflections
 
-Timing: ~280ms
+Timing: ~260ms
 JS: ~280ms
 
 ```bash
