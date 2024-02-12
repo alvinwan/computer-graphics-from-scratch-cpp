@@ -1,7 +1,8 @@
 /*
 Raycast 09 - Performance Optimization
 ======================================
-Implements single-threaded optimizations.
+Implements single-threaded optimizations:
+- shadow ray early terminates after *any intersection (-10ms)
 
 ```bash
 g++ raytracer-09-optimization.cpp -o main.out -std=c++20 -Ofast
@@ -452,6 +453,33 @@ Intersection closest_intersection(
     return Intersection(*closest_object, point, closest_object->get_normal_of(point));
 }
 
+// Checks if there exists any intersection. Used for shadow rays.
+bool any_intersection(
+    float3 origin,
+    float3 direction,
+    float min_t,
+    float max_t,
+    Scene scene
+) {
+    float closest_t = INFINITY;
+    Object* closest_object;
+
+    for (int i = 0; i < scene.objects.size(); i++) {
+        Object* object = scene.objects[i];
+
+        std::vector<float> ts = object->intersect(origin, direction);
+        for (int j = 0; j < ts.size(); j++) {
+            if (ts[j] < closest_t && min_t < ts[j] && ts[j] < max_t) {
+                closest_t = ts[j];
+                closest_object = object;
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 // Compute the reflection of a ray on a surface defined by its normal
 float3 reflect_ray(float3 ray, float3 normal) {
     return subtract(multiply(2 * dot_product(ray, normal), normal), ray);
@@ -484,8 +512,7 @@ float compute_lighting(float3 point, float3 normal, float3 view, float specular,
             }
 
             // Shadow check
-            Intersection intersection = closest_intersection(point, vec_l, EPSILON, shadow_t_max, scene);
-            if (intersection.is_valid) continue;
+            if (any_intersection(point, vec_l, EPSILON, shadow_t_max, scene)) continue;
 
             // Diffuse
             float n_dot_l = dot_product(normal, vec_l);
