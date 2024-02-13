@@ -110,32 +110,27 @@ rgb clamp(float3 vec) {
 
 // Ray tracing
 
-struct Object {
+struct Material {
     float3 color;
     float specular;
     float reflective;
 
-    Object() {}
+    Material() {}
 
-    Object(const float3& v_color, float v_specular, float v_reflective) {
+    Material(const float3& v_color, float v_specular, float v_reflective) {
         color = v_color;
         specular = v_specular;
         reflective = v_reflective;
     }
+};
 
-    // Computes intersection of a ray with object. Returns solution in terms of
-    // line parameter t.
-    virtual std::vector<float> intersect(float3 origin, float3 direction) {
-        return {INFINITY};
-    }
+struct Object {
+    Material material;
 
-    // Returns normal for a given point on the surface of this object.
-    virtual float3 get_normal_of(float3 point) {
-        return {0, 0, 0};
-    }
+    Object() {}
 
-    virtual bool has_point(float3 point) {
-        return false;
+    Object(Material v_material) {
+        material = v_material;
     }
 };
 
@@ -145,41 +140,43 @@ struct Sphere : Object {
 
     Sphere() {}
 
-    Sphere(const float3& v_center, float v_radius, const float3& v_color, float v_specular, float v_reflective)
-    : Object(v_color, v_specular, v_reflective) {
+    Sphere(const float3& v_center, float v_radius, Material v_material)
+    : Object(v_material) {
         center = v_center;
         radius = v_radius;
     }
-
-    // Computes intersection of a ray with sphere. Returns solution in terms of
-    // line parameter t.
-    std::vector<float> intersect(float3 origin, float3 direction) {
-        float3 difference = subtract(origin, center);
-
-        float a = dot_product(direction, direction);
-        float b = 2 * dot_product(difference, direction);
-        float c = dot_product(difference, difference) - radius * radius;
-
-        float discriminant = b * b - 4 * a * c;
-        if (discriminant < 0) {
-            return {INFINITY, INFINITY};
-        }
-
-        float t0 = (-b + sqrt(discriminant)) / (2 * a);
-        float t1 = (-b - sqrt(discriminant)) / (2 * a);
-        return {std::min(t0, t1), std::max(t0, t1)};
-    }
-
-    float3 get_normal_of(float3 point) {
-        float3 normal = subtract(point, center);
-        normal = multiply(1 / length(normal), normal);
-        return normal;
-    }
-
-    bool has_point(float3 point) {
-        return std::abs(length(subtract(point, center)) - radius) < EPSILON;
-    }
 };
+
+// Computes intersection of a ray with sphere. Returns solution in terms of
+// line parameter t.
+std::vector<float> intersect(Sphere sphere, float3 origin, float3 direction) {
+    float3 difference = subtract(origin, sphere.center);
+
+    float a = dot_product(direction, direction);
+    float b = 2 * dot_product(difference, direction);
+    float c = dot_product(difference, difference) - sphere.radius * sphere.radius;
+
+    float discriminant = b * b - 4 * a * c;
+    if (discriminant < 0) {
+        return {INFINITY, INFINITY};
+    }
+
+    float t0 = (-b + sqrt(discriminant)) / (2 * a);
+    float t1 = (-b - sqrt(discriminant)) / (2 * a);
+    return {std::min(t0, t1), std::max(t0, t1)};
+}
+
+// Returns normal for a given point on the surface of a sphere.
+float3 get_normal_of(Sphere sphere, float3 point) {
+    float3 normal = subtract(point, sphere.center);
+    normal = multiply(1 / length(normal), normal);
+    return normal;
+}
+
+// Checks if the point lies on this sphere's surface.
+bool has_point(Sphere sphere, float3 point) {
+    return std::abs(length(subtract(point, sphere.center)) - sphere.radius) < EPSILON;
+}
 
 struct Plane : Object {
     float3 normal;
@@ -187,40 +184,23 @@ struct Plane : Object {
 
     Plane() {}
 
-    Plane(float3 v_normal, float v_distance, const float3& v_color, float v_specular, float v_reflective)
-    : Object(v_color, v_specular, v_reflective) {
+    Plane(float3 v_normal, float v_distance, Material v_material)
+    : Object(v_material) {
         normal = v_normal;
         distance = v_distance;
     }
-
-    // Computes intersection of a ray with plane. Returns solution in terms of
-    // line parameter t.
-    std::vector<float> intersect(float3 origin, float3 direction) {
-        float denominator = dot_product(normal, direction);
-        // Plane is parallel to ray (=0) or we're looking at back side (>0)
-        if (denominator >= 0) return {INFINITY};
-
-        float t = -(distance + dot_product(normal, origin)) / denominator;
-        if (t < 0) return {INFINITY}; // Triangle is 'behind' the ray
-        return {t};
-    }
-
-    float3 get_normal_of(float3 point) {
-        return normal;
-    }
-
-    bool has_point(float3 point) {
-        return std::abs(dot_product(point, normal) - distance) < EPSILON;
-    }
 };
 
-// Compute on which side a point lies, relative to the line defined by two
-// points. This is the sign that you would get by computing
-// normal.dot_product(point) - distance.
-float sign(float3 point, float3 a, float3 b, float3 normal) {
-    float3 candidate = subtract(point, a);
-    float3 edge = subtract(b, a);
-    return dot_product(normal, cross_product(candidate, edge));
+// Computes intersection of a ray with plane. Returns solution in terms of
+// line parameter t.
+std::vector<float> intersect(Plane plane, float3 origin, float3 direction) {
+    float denominator = dot_product(plane.normal, direction);
+    // Plane is parallel to ray (=0) or we're looking at back side (<0)
+    if (denominator >= 0) return {INFINITY};
+
+    float t = -(plane.distance + dot_product(plane.normal, origin)) / denominator;
+    if (t < 0) return {INFINITY}; // Triangle is 'behind' the ray
+    return {t};
 }
 
 struct Triangle : Object {
@@ -229,8 +209,8 @@ struct Triangle : Object {
     float3 c;
     Plane plane;
 
-    Triangle(float3 v_a, float3 v_b, float3 v_c, const float3& v_color, float v_specular, float v_reflective)
-    : Object(v_color, v_specular, v_reflective) {
+    Triangle(float3 v_a, float3 v_b, float3 v_c, Material v_material)
+    : Object(v_material) {
         a = v_a;
         b = v_b;
         c = v_c;
@@ -248,120 +228,116 @@ struct Triangle : Object {
         normal = multiply(1 / magnitude, normal);
 
         float distance = -dot_product(normal, a);
-        plane = Plane(normal, distance, v_color, v_specular, v_reflective);
-    }
-
-    // Computes intersection of a ray with triangle. Returns solution in terms
-    // of line parameter t.
-    std::vector<float> intersect(float3 origin, float3 direction) {
-        // Find intersection between ray and plane
-        float t = plane.intersect(origin, direction)[0];
-        float3 point = add(origin, multiply(t, direction));
-
-        // Check if the intersection lies in the triangle. NOTE the ordering of
-        // points must be consistently clockwise OR counter clockwise, in this
-        // calculation. If *any sign is negative, ray does not intersect the
-        // triangle.
-        if (sign(point, a, b, plane.normal) >= 0) return {INFINITY};
-        if (sign(point, b, c, plane.normal) >= 0) return {INFINITY};
-        if (sign(point, c, a, plane.normal) >= 0) return {INFINITY};
-
-        // The intersection point lies in the 'correct' half plane for every
-        // edge, so it lies in the triangle.
-        return {t};
-    }
-
-
-    float3 get_normal_of(float3 point) {
-        return plane.get_normal_of(point);
-    }
-
-    bool has_point(float3 point) {
-        // TODO: This implementation is incomplete. Repeats intersect above.
-        return plane.has_point(point);
+        plane = Plane(normal, distance, v_material);
     }
 };
+
+// Compute on which side a point lies, relative to the line defined by two
+// points. This is the sign that you would get by computing
+// normal.dot_product(point) - distance.
+float sign(float3 point, float3 a, float3 b, float3 normal) {
+    float3 candidate = subtract(point, a);
+    float3 edge = subtract(b, a);
+    return dot_product(normal, cross_product(candidate, edge));
+}
+
+// Computes intersection of a ray with triangle. Returns solution in terms
+// of line parameter t.
+std::vector<float> intersect(Triangle triangle, float3 origin, float3 direction) {
+    // Find intersection between ray and plane
+    float t = intersect(triangle.plane, origin, direction)[0];
+    if (t == INFINITY) return {INFINITY};
+    float3 point = add(origin, multiply(t, direction));
+
+    // Check if the intersection lies in the triangle. NOTE the ordering of
+    // points must be consistently clockwise OR counter clockwise, in this
+    // calculation. If *any sign is negative, ray does not intersect the
+    // triangle.
+    if (sign(point, triangle.a, triangle.b, triangle.plane.normal) >= 0) return {INFINITY};
+    if (sign(point, triangle.b, triangle.c, triangle.plane.normal) >= 0) return {INFINITY};
+    if (sign(point, triangle.c, triangle.a, triangle.plane.normal) >= 0) return {INFINITY};
+
+    // The intersection point lies in the 'correct' half plane for every
+    // edge, so it lies in the triangle.
+    return {t};
+}
 
 enum Operation { AND, OR, MINUS };
 
 struct CSG : Object {
-    Object* object1;
-    Object* object2;
+    Sphere sphere1;
+    Sphere sphere2;
     Operation operation;
 
     CSG() {}
 
-    CSG(Object* v_object1, Object* v_object2, Operation v_operation, const float3& v_color, float v_specular, float v_reflective)
-    : Object(v_color, v_specular, v_reflective) {
-        object1 = v_object1;
-        object2 = v_object2;
+    CSG(Sphere v_sphere1, Sphere v_sphere2, Operation v_operation, Material v_material)
+    : Object(v_material) {
+        sphere1 = v_sphere1;
+        sphere2 = v_sphere2;
         operation = v_operation;
     }
-
-    std::vector<float> intersect(float3 origin, float3 direction) {
-        std::vector<float> ts1 = object1->intersect(origin, direction);
-        if (ts1[0] == INFINITY) {
-            return {INFINITY};  // For all ops, ray must intersect A
-        }
-
-        std::vector<float> ts2 = object2->intersect(origin, direction);
-
-        // Objects without volume will only return a single intersection, such
-        // as a plane or triangle. Objects *with volume will return an even
-        // number of interesections.
-        if (ts1.size() % 2 != 0 || ts2.size() % 2 != 0) {
-            std::cerr << "Error: Both objects in a CSG must have volume" << std::endl;
-            return {INFINITY, INFINITY};
-        }
-
-        // Each operation has a different response, depending on which of the
-        // two objects the ray intersects.
-        if (operation == AND) {
-            // In an AND operation, *both volumes must be intersected
-            if (ts1[0] != INFINITY && ts2[0] != INFINITY) {
-                return {std::min(ts1[1], ts2[1]), std::max(ts1[0], ts2[0])};
-            }
-            return {INFINITY, INFINITY};
-        } else if (operation == OR) {
-            if (ts1[0] != INFINITY && ts2[0] != INFINITY) {
-                return {std::min(ts1[0], ts2[0]), std::max(ts1[1], ts2[1])};
-            }
-            // In an OR operation, AT LEAST one volume needs to be intersected
-            if (ts1[0] == INFINITY || ts2[0] == INFINITY) {
-                return {std::min(ts1[0], ts2[0]), std::min(ts1[1], ts2[1])};
-            }
-            return {INFINITY, INFINITY}; // Intersects neither
-        } else {  // operation == MINUS
-            // In a MINUS operation, the first object must be intersected.
-            // If you order all the t's together, we allow BABA, ABAB, AA, ABBA,
-            // and disallow BB, BAAB. We can check this by ensuring that A[0]
-            // is in front OR A[1] is in the back.
-            if (ts1[0] != INFINITY && (ts1[0] < ts2[0] || ts1[1] > ts2[1])) {
-                return {std::min(ts1[0], ts2[0]), std::max(ts1[1], ts2[1])};
-            }
-            return {INFINITY, INFINITY};
-        }
-    }
-
-    float3 get_normal_of(float3 point) {
-        if (object1->has_point(point)) {
-            // No matter the operation, if the point of intersection lies on the
-            // first object, always use the first object's normal, normally.
-            return object1->get_normal_of(point);
-        }
-        // Otherwise, the point lies on the second object. In this case, we need
-        // to handle operation-by-operation.
-        float3 normal = object2->get_normal_of(point);
-        if (operation == AND || operation == OR) {
-            // If operation is AND or OR, use the normal, normally.
-            return normal;
-        }
-        // If the operation is a MINUS, and the point of intersection lies on
-        // the second object, the normal needs to be flipped so it's on the
-        // inside of object2.
-        return multiply(-1, normal);
-    }
 };
+
+std::vector<float> intersect(CSG csg, float3 origin, float3 direction) {
+    std::vector<float> ts1 = intersect(csg.sphere1, origin, direction);
+    std::vector<float> ts2 = intersect(csg.sphere2, origin, direction);
+
+    // Objects without volume will only return a single intersection, such
+    // as a plane or triangle. Objects *with volume will return an even
+    // number of interesections.
+    if (ts1.size() % 2 != 0 || ts2.size() % 2 != 0) {
+        std::cerr << "Error: Both objects in a CSG must have volume" << std::endl;
+        return {INFINITY, INFINITY};
+    }
+
+    // Each operation has a different response, depending on which of the
+    // two objects the ray intersects.
+    if (csg.operation == AND) {
+        // In an AND operation, *both volumes must be intersected
+        if (ts1[0] != INFINITY && ts2[0] != INFINITY) {
+            return {std::min(ts1[1], ts2[1]), std::max(ts1[0], ts2[0])};
+        }
+        return {INFINITY, INFINITY};
+    } else if (csg.operation == OR) {
+        if (ts1[0] != INFINITY && ts2[0] != INFINITY) {
+            return {std::min(ts1[0], ts2[0]), std::max(ts1[1], ts2[1])};
+        }
+        // In an OR operation, AT LEAST one volume needs to be intersected
+        if (ts1[0] == INFINITY || ts2[0] == INFINITY) {
+            return {std::min(ts1[0], ts2[0]), std::min(ts1[1], ts2[1])};
+        }
+        return {INFINITY, INFINITY}; // Intersects neither
+    } else {  // operation == MINUS
+        // In a MINUS operation, the first object must be intersected.
+        // If you order all the t's together, we allow BABA, ABAB, AA, ABBA,
+        // and disallow BB, BAAB. We can check this by ensuring that A[0]
+        // is in front OR A[1] is in the back.
+        if (ts1[0] != INFINITY && (ts1[0] < ts2[0] || ts1[1] > ts2[1])) {
+            return {std::min(ts1[0], ts2[0]), std::max(ts1[1], ts2[1])};
+        }
+        return {INFINITY, INFINITY};
+    }
+}
+
+float3 get_normal_of(CSG csg, float3 point) {
+    if (has_point(csg.sphere1, point)) {
+        // No matter the operation, if the point of intersection lies on the
+        // first object, always use the first object's normal, normally.
+        return get_normal_of(csg.sphere1, point);
+    }
+    // Otherwise, the point lies on the second object. In this case, we need
+    // to handle operation-by-operation.
+    float3 normal = get_normal_of(csg.sphere2, point);
+    if (csg.operation == AND || csg.operation == OR) {
+        // If operation is AND or OR, use the normal, normally.
+        return normal;
+    }
+    // If the operation is a MINUS, and the point of intersection lies on
+    // the second object, the normal needs to be flipped so it's on the
+    // inside of object2.
+    return multiply(-1, normal);
+}
 
 enum LightType {AMBIENT, POINT, DIRECTIONAL};
 
@@ -390,12 +366,16 @@ struct Camera {
 };
 
 struct Scene {
-    std::vector<Object*> objects;
+    std::vector<Sphere> spheres;
+    std::vector<Triangle> triangles;
+    std::vector<CSG> csgs;
     std::vector<Light> lights;
     float3 background_color;
 
-    Scene(std::vector<Object*> v_objects, std::vector<Light> v_lights, float3 v_background_color) {
-        objects = v_objects;
+    Scene(std::vector<Sphere> v_spheres, std::vector<Triangle> v_triangles, std::vector<CSG> v_csgs, std::vector<Light> v_lights, float3 v_background_color) {
+        spheres = v_spheres;
+        triangles = v_triangles;
+        csgs = v_csgs;
         lights = v_lights;
         background_color = v_background_color;
     }
@@ -408,7 +388,7 @@ float3 canvas_to_viewport(int32_t x, int32_t y, int32_t width, int32_t height) {
 
 // Holds intersection information for a raycast
 struct Intersection {
-    Object object;
+    Material material;
     float3 point;
     float3 normal;
     bool is_valid;
@@ -417,8 +397,8 @@ struct Intersection {
         is_valid = false;
     }
 
-    Intersection(Object v_object, float3 v_point, float3 v_normal) {
-        object = v_object;
+    Intersection(Material v_material, float3 v_point, float3 v_normal) {
+        material = v_material;
         point = v_point;
         normal = v_normal;
         is_valid = true;
@@ -434,16 +414,48 @@ Intersection closest_intersection(
     Scene scene
 ) {
     float closest_t = INFINITY;
-    Object* closest_object;
+    Material material;
+    float3 normal;
 
-    for (int i = 0; i < scene.objects.size(); i++) {
-        Object* object = scene.objects[i];
+    for (int i = 0; i < scene.spheres.size(); i++) {
+        Sphere sphere = scene.spheres[i];
 
-        std::vector<float> ts = object->intersect(origin, direction);
+        std::vector<float> ts = intersect(sphere, origin, direction);
         for (int j = 0; j < ts.size(); j++) {
             if (ts[j] < closest_t && min_t < ts[j] && ts[j] < max_t) {
                 closest_t = ts[j];
-                closest_object = object;
+                material = sphere.material;
+
+                float3 point = add(origin, multiply(closest_t, direction));
+                normal = get_normal_of(sphere, point);
+            }
+        }
+    }
+
+    // NOTE: Duplicated code for triangles, to use compile-time polymorphism
+    for (int i = 0; i < scene.triangles.size(); i++) {
+        Triangle triangle = scene.triangles[i];
+
+        float t = intersect(triangle, origin, direction)[0];
+        if (t < closest_t && min_t < t && t < max_t) {
+            closest_t = t;
+            material = triangle.material;
+            normal = triangle.plane.normal;
+        }
+    }
+
+    // NOTE: Duplicated code for CSGs, to use compile-time polymorphism
+    for (int i = 0; i < scene.csgs.size(); i++) {
+        CSG csg = scene.csgs[i];
+
+        std::vector<float> ts = intersect(csg, origin, direction);
+        for (int j = 0; j < ts.size(); j++) {
+            if (ts[j] < closest_t && min_t < ts[j] && ts[j] < max_t) {
+                closest_t = ts[j];
+                material = csg.material;
+
+                float3 point = add(origin, multiply(closest_t, direction));
+                normal = get_normal_of(csg, point);
             }
         }
     }
@@ -453,7 +465,7 @@ Intersection closest_intersection(
 
     // sets intersection.is_valid = true
     float3 point = add(origin, multiply(closest_t, direction));
-    return Intersection(*closest_object, point, closest_object->get_normal_of(point));
+    return Intersection(material, point, normal);
 }
 
 // Compute the reflection of a ray on a surface defined by its normal
@@ -529,12 +541,12 @@ float3 trace_ray(
         intersection.point,
         intersection.normal,
         multiply(-1, direction),
-        intersection.object.specular,
+        intersection.material.specular,
         scene);
-    float3 local_color = multiply(intensity, intersection.object.color);
+    float3 local_color = multiply(intensity, intersection.material.color);
 
     // If we hit the recursion limit or the sphere is not reflective, finish
-    float reflective = intersection.object.reflective;
+    float reflective = intersection.material.reflective;
     if (recursion_depth <= 0 || reflective <= 0) {
         return local_color;
     }
@@ -562,23 +574,27 @@ int32_t main() {
     Camera camera = Camera(position, rotation);
 
     // Define scene
-    std::vector<Object*> objects = {
-        new Sphere({0, -5001, 0}, 5000, {255, 255, 0}, 1000, 0.5),
-        new Triangle({2, 0, 6}, {-2, 0, 6}, {0, 2, 4}, {0, 255, 255}, 500, 0.4),
-        new CSG(
-            new Sphere({-2, 0, 4}, 1, {0, 0, 0}, 0, 0),
-            new Sphere({-2, 1, 4}, 1, {0, 0, 0}, 0, 0),
-            OR, {0, 255, 0}, 10, 0.4
+    std::vector<Sphere> spheres = {
+        Sphere({0, -5001, 0}, 5000, Material({255, 255, 0}, 1000, 0.5)),
+    };
+    std::vector<Triangle> triangles = {
+        Triangle({2, 0, 6}, {-2, 0, 6}, {0, 2, 4}, Material({0, 255, 255}, 500, 0.4))
+    };
+    std::vector<CSG> csgs = {
+        CSG(
+            Sphere({-2, 0, 4}, 1, Material()),
+            Sphere({-2, 1, 4}, 1, Material()),
+            OR, Material({0, 255, 0}, 10, 0.4)
         ),
-        new CSG(
-            new Sphere({0, -1, 3}, 1, {0, 0, 0}, 0, 0),
-            new Sphere({0, 0, 3}, 1, {0, 0, 0}, 0, 0),
-            AND, {255, 0, 0}, 500, 0.2f
+        CSG(
+            Sphere({0, -1, 3}, 1, Material()),
+            Sphere({0, 0, 3}, 1, Material()),
+            AND, Material({255, 0, 0}, 500, 0.2f)
         ),
-        new CSG(
-            new Sphere({2, 0, 4}, 1, {0, 0, 0}, 0, 0),
-            new Sphere({2, 1, 3}, 1, {0, 0, 0}, 0, 0),
-            MINUS, {0, 0, 255}, 500, 0.3
+        CSG(
+            Sphere({2, 0, 4}, 1, Material()),
+            Sphere({2, 1, 3}, 1, Material()),
+            MINUS, Material({0, 0, 255}, 500, 0.3)
         ),
     };
 
@@ -587,7 +603,7 @@ int32_t main() {
         Light(POINT, 0.6, {2, 1, 0}),
         Light(DIRECTIONAL, 0.2, {1, 4, 4})
     };
-    Scene scene = Scene(objects, lights, {0, 0, 0});
+    Scene scene = Scene(spheres, triangles, csgs, lights, {0, 0, 0});
 
     for (int32_t x = -width / 2; x < width / 2; x++) {
         for (int32_t y = -height / 2; y < height / 2; y++)
