@@ -302,10 +302,6 @@ struct CSG : Object {
 
     std::vector<float> intersect(float3 origin, float3 direction) {
         std::vector<float> ts1 = object1->intersect(origin, direction);
-        if (ts1[0] == INFINITY) {
-            return {INFINITY};  // For all ops, ray must intersect A
-        }
-
         std::vector<float> ts2 = object2->intersect(origin, direction);
 
         // Objects without volume will only return a single intersection, such
