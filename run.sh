@@ -8,8 +8,9 @@ files=(
     "raytracer-07-triangles"
     "raytracer-08-csg"
     "raytracer-09-optimization"
+    "raytracer-10-transparency"
 )
 
 for name in "${files[@]}"; do
-    g++ $name.cpp -o main.out -std=c++20 -Ofast && time ./main.out && ~/imgcat output.bmp;
+    g++ $name.cpp -o main.out -std=c++20 -Ofast && OUT=true ./main.out && ~/imgcat output.bmp;
 done;
