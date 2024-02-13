@@ -1,7 +1,9 @@
 /*
 Raycast 08 - Constructive Solid Geometry
 ========================================
-Adds support for constructive solid geometry
+Adds support for constructive solid geometry. Note that porting the compile-time
+polymorphism changes from Raytracer 07 actually slowed down this script. This
+may be because of non-locality in the new Material struct.
 
 Timing: 1.32s
 
