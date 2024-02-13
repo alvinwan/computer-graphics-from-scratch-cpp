@@ -297,6 +297,13 @@ float3 trace_ray(
 
     // Compute the reflected color
     float3 reflected_ray = reflect_ray(multiply(-1, direction), normal);
+    // NOTE: Below addresses 'shadow' acne (i.e., flickering shadow), which you
+    // can see here: https://imgur.com/a/ycB69zX. To fix this, move the starting
+    // point of the reflection ray along the normal, to prevent self-
+    // intersection. JS demos don't have this problem because JS uses FP64 by
+    // default. Additionally, other spheres don't have this problem because only
+    // the biggest radius=5000 one has reflection rays that are near parallel.
+    point = add(point, multiply(EPSILON, normal));
     const float3 reflected_color = trace_ray(point, reflected_ray, EPSILON, INFINITY, recursion_depth - 1, scene);
 
     return add(multiply(1 - reflective, local_color), multiply(reflective, reflected_color));
