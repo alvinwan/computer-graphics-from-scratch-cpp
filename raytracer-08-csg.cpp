@@ -5,7 +5,7 @@ Adds support for constructive solid geometry. Note that porting the compile-time
 polymorphism changes from Raytracer 07 actually slowed down this script. This
 may be because of non-locality in the new Material struct.
 
-Timing: 1.32s
+Timing: 1.15s
 
 ```bash
 g++ raytracer-08-csg.cpp -o main.out -std=c++20 -Ofast

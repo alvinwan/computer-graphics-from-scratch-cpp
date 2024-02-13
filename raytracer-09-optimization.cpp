@@ -5,9 +5,9 @@ Implements single-threaded optimizations:
 - shadow ray early terminates after *any intersection (-5 ms)
 - use shadow coherence, test against last intersected object
 - cache immutable values
-- bounding volume hierarchy using manually defined bounding spheres (-25ms)
+- bounding volume hierarchy using manually defined bounding spheres (-20ms)
 
-Timing: 1.04s
+Timing: 0.94s
 
 ```bash
 g++ raytracer-09-optimization.cpp -o main.out -std=c++20 -Ofast
