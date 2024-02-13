@@ -1,8 +1,28 @@
 # "Computer Graphics from Scratch" in C++
 C++ implementation of demos from "Computer Graphics from Scratch".
-*Additionally* provides implementations for the "Extending the Raytracer" and
+
+Additionally implements features from "Extending the Raytracer" and
 "Extending the Rasterizer" sections, which didn't previously have
 implementations.
+
+> The C++ demos are written in FP32, as opposed to the original Javascript demos that use FP64 by default. This results in [shadow acne](https://imgur.com/a/ycB69zX) in all the demos after Raycaster 04. To fix this, I added an epsilon reflection ray bias (e.g., start the reflection ray at an epsilon offset along the surface normal). The previews below include this fix.
+
+| Raytracer 01 - Basic | Raytracer 02 - Diffuse | Raytracer 03 - Specular |
+|---|---|---|
+| ![https://i.imgur.com/ziIToN5.png](https://i.imgur.com/ziIToN5.png) | ![https://i.imgur.com/yaXHtUk.png](https://i.imgur.com/yaXHtUk.png) | ![https://i.imgur.com/bMobaeB.png](https://i.imgur.com/bMobaeB.png) |
+
+| Raytracer 04 - Shadow | Raytracer 05 - Reflection | Raytracer 06 - Camera |
+|---|---|---|
+| ![https://i.imgur.com/LxoOVys.png](https://i.imgur.com/LxoOVys.png) | ![https://i.imgur.com/RT13thh.png](https://i.imgur.com/RT13thh.png) | ![https://i.imgur.com/B5Tm1CX.png](https://i.imgur.com/B5Tm1CX.png) |
+
+**Bonus demos** - These implement various features from "Extending the Raytracer".
+
+| Raytracer 07 - Triangle | Raytracer 08 - CSG | Raytracer 09 - Optimization |
+|---|---|---|
+| ![https://i.imgur.com/aieNAAV.png](https://i.imgur.com/aieNAAV.png) | ![https://i.imgur.com/I6g19L4.png](https://i.imgur.com/I6g19L4.png) | ![https://i.imgur.com/cit6dSq.png](https://i.imgur.com/cit6dSq.png) |
+
+
+## Getting Started
 
 To get started, pick any demo script to build. For example, the first demo for
 raycasting is in `raytracer-01.cpp`. To build and run it, use the following
