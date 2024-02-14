@@ -109,6 +109,48 @@ void draw_line(uint8_t data[][3], int width, int height, Point p0, Point p1, rgb
     }
 }
 
+void draw_wireframe_triangle(uint8_t data[][3], int width, int height, Point p0, Point p1, Point p2, rgb color) {
+    draw_line(data, width, height, p0, p1, color);
+    draw_line(data, width, height, p1, p2, color);
+    draw_line(data, width, height, p0, p2, color);
+}
+
+void draw_filled_triangle(uint8_t data[][3], int width, int height, Point p0, Point p1, Point p2, rgb color) {
+    if (p1.y < p0.y) std::swap(p0, p1);
+    if (p2.y < p0.y) std::swap(p0, p2);
+    if (p2.y < p1.y) std::swap(p1, p2);
+
+    // Compute X coordinates of the edges.
+    std::vector<int> x01 = interpolate(p0.y, p0.x, p1.y, p1.x);
+    std::vector<int> x12 = interpolate(p1.y, p1.x, p2.y, p2.x);
+    std::vector<int> x02 = interpolate(p0.y, p0.x, p2.y, p2.x);
+
+    // Merge the two short sides.
+    std::vector<int> x012;
+    x012.reserve(x01.size() + x12.size() - 1); // pre-allocate
+    std::copy(x01.begin() + 1, x01.end(), std::back_inserter(x012)); // ignore first element
+    std::copy(x12.begin(), x12.end(), std::back_inserter(x012)); // concat second array
+
+    // Determine which is left and which is right.
+    std::vector<int> x_left;
+    std::vector<int> x_right;
+    int m = (int) std::floor(x02.size() / 2);
+    if (x02[m] < x012[m]) {
+        x_left = x02;
+        x_right = x012;
+    } else {
+        x_left = x012;
+        x_right = x02;
+    }
+
+    // Draw horizontal segments.
+    for (int y = p0.y; y <= p2.y; y++) {
+        for (int x = x_left[y - p0.y]; x <= x_right[y - p0.y]; x++) {
+            put_pixel(data, width, height, x, y, color);
+        }
+    }
+}
+
 int main() {
     int32_t width = 600;
     int32_t height = 600;
@@ -116,8 +158,12 @@ int main() {
 
     clear(data, width, height);
 
-    draw_line(data, width, height, Point(-200, -100), Point(240, 120), {0, 0, 0});
-    draw_line(data, width, height, Point(-50, -200), Point(60, 240), {0, 0, 0});
+    Point p0 = Point(-200, -250);
+    Point p1 = Point(200, 50);
+    Point p2 = Point(20, 250);
+
+    draw_filled_triangle(data, width, height, p0, p1, p2, {0, 255, 0});
+    draw_wireframe_triangle(data, width, height, p0, p1, p2, {0, 0, 0});
 
     if (std::getenv("OUT") && write_bmp_file("output.bmp", data, width, height)) {
         std::cout << "Image written successfully." << std::endl;

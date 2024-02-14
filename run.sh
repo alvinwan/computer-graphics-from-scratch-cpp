@@ -10,6 +10,7 @@ files=(
     "raytracer-09-optimization"
     "raster-01-lines"
     "raster-02-lines"
+    "raster-03-triangle"
 )
 
 for name in "${files[@]}"; do
