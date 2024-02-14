@@ -10,7 +10,7 @@ g++ raster-01-lines.cpp -o main.out -std=c++20 -Ofast
 open output.bmp
 ```
 
-Implementation for https://gabrielgambetta.com/computer-graphics-from-scratch/demos/raytracer-01.html
+Implementation for https://gabrielgambetta.com/computer-graphics-from-scratch/demos/raster-01.html
 */
 #include "bmp.h"
 
