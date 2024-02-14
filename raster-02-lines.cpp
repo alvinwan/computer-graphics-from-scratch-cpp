@@ -90,11 +90,7 @@ void draw_line(uint8_t data[][3], int width, int height, Point p0, Point p1, rgb
 
     if (std::abs(dx) > std::abs(dy)) {
         // The line is horizontal-ish. Make sure it's left to right.
-        if (dx < 0) {
-            Point swap = p0;
-            p0 = p1;
-            p1 = swap;
-        }
+        if (dx < 0) std::swap(p0, p1);
 
         // Compute the Y values and draw.
         std::vector<int> ys = interpolate(p0.x, p0.y, p1.x, p1.y);
@@ -103,11 +99,7 @@ void draw_line(uint8_t data[][3], int width, int height, Point p0, Point p1, rgb
         }
     } else {
         // The line is verical-ish. Make sure it's bottom to top.
-        if (dy < 0) {
-            Point swap = p0;
-            p0 = p1;
-            p1 = swap;
-        }
+        if (dy < 0) std::swap(p0, p1);
 
         // Compute the X values and draw.
         std::vector<int> xs = interpolate(p0.y, p0.x, p1.y, p1.x);
