@@ -18,40 +18,42 @@ Implementation for https://gabrielgambetta.com/computer-graphics-from-scratch/de
 
 typedef std::array<float, 3> float3;
 typedef std::array<uint8_t, 3> rgb;
+const int32_t WIDTH = 600;
+const int32_t HEIGHT = 600;
+const int VIEWPORT_SIZE = 1;
+const int PROJECTION_PLANE_Z = 1;
 
 // Canvas
 
 bool put_pixel(
-    uint8_t data[][3],
-    int32_t width,
-    int32_t height,
+    uint8_t data[WIDTH * HEIGHT][3],
     int32_t x,
     int32_t y,
     const rgb color
 ) {
     // Translate [-W/2, W/2] into [0, W]. Ditto for H
-    x = width / 2 + x;
-    y = height / 2 - y - 1;
+    x = WIDTH / 2 + x;
+    y = HEIGHT / 2 - y - 1;
 
     // Checks that the pixel is in bound
-    if (x < 0 || x >= width || y < 0 || y >= height) {
+    if (x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT) {
         std::cerr << "Error: Attempted to write out-of-bounds pixel (" << x << ", " << y << ")." << std::endl;
         return false;
     }
 
     // Write into data, which is a flattened array where width * height in 1d
-    int32_t offset = y * width + x;
+    int32_t offset = y * WIDTH + x;
     data[offset][0] = color[0];
     data[offset][1] = color[1];
     data[offset][2] = color[2];
     return true;
 }
 
-void clear(uint8_t data[][3], int width, int height) {
-    for (int x = 0; x < width; x++) {
-        for (int y = 0; y < height; y++) {
+void clear(uint8_t data[][3]) {
+    for (int x = 0; x < WIDTH; x++) {
+        for (int y = 0; y < HEIGHT; y++) {
             for (int i = 0; i < 3; i++) {
-                data[y * width + x][i] = 255;
+                data[y * WIDTH + x][i] = 255;
             }
         }
     }
@@ -59,15 +61,27 @@ void clear(uint8_t data[][3], int width, int height) {
 
 // Data model
 
+// A Point.
 struct Point {
     int x;
     int y;
-    float h;
 
-    Point(const int v_x, const int v_y, const float v_h) {
+    Point(const int v_x, const int v_y) {
         x = v_x;
         y = v_y;
-        h = v_h;
+    }
+};
+
+// A 3D vertex.
+struct Vertex {
+    float x;
+    float y;
+    float z;
+
+    Vertex(const float v_x, const float v_y, const float v_z) {
+        x = v_x;
+        y = v_y;
+        z = v_z;
     }
 };
 
@@ -111,7 +125,7 @@ std::vector<int> interpolate(int i0, int d0, int i1, int d1) {
     return float_vector_to_int(interpolate(i0, (float) d0, i1, (float) d1));
 }
 
-void draw_line(uint8_t data[][3], int width, int height, Point p0, Point p1, rgb color) {
+void draw_line(uint8_t data[][3], Point p0, Point p1, rgb color) {
     int dx = p1.x - p0.x;
     int dy = p1.y - p0.y;
 
@@ -122,7 +136,7 @@ void draw_line(uint8_t data[][3], int width, int height, Point p0, Point p1, rgb
         // Compute the Y values and draw.
         std::vector<int> ys = interpolate(p0.x, p0.y, p1.x, p1.y);
         for (int x = p0.x; x <= p1.x; x++) {
-            put_pixel(data, width, height, x, ys[x - p0.x], color);
+            put_pixel(data, x, ys[x - p0.x], color);
         }
     } else {
         // The line is verical-ish. Make sure it's bottom to top.
@@ -131,90 +145,59 @@ void draw_line(uint8_t data[][3], int width, int height, Point p0, Point p1, rgb
         // Compute the X values and draw.
         std::vector<int> xs = interpolate(p0.y, p0.x, p1.y, p1.x);
         for (int y = p0.y; y <= p1.y; y++) {
-            put_pixel(data, width, height, xs[y - p0.y], y, color);
+            put_pixel(data, xs[y - p0.y], y, color);
         }
     }
 }
 
-void draw_wireframe_triangle(uint8_t data[][3], int width, int height, Point p0, Point p1, Point p2, rgb color) {
-    draw_line(data, width, height, p0, p1, color);
-    draw_line(data, width, height, p1, p2, color);
-    draw_line(data, width, height, p0, p2, color);
+// Converts 2D viewport coordinates to 2D canvas coordinates.
+Point viewport_to_canvas(float vx, float vy) {
+    return Point(
+        (int) std::round(vx * WIDTH / VIEWPORT_SIZE),
+        (int) std::round(vy * HEIGHT / VIEWPORT_SIZE));
 }
 
-template <typename T>
-std::vector<T> concat(std::vector<T> v1, std::vector<T> v2, int start = 0) {
-    std::vector<T> out;
-    out.reserve(v1.size() + v2.size() - 1); // pre-allocate
-    std::copy(v1.begin() + start, v1.end(), std::back_inserter(out)); // ignore first element
-    std::copy(v2.begin(), v2.end(), std::back_inserter(out)); // concat second array
-    return out;
-}
 
-void draw_shaded_triangle(uint8_t data[][3], int width, int height, Point p0, Point p1, Point p2, rgb color) {
-    if (p1.y < p0.y) std::swap(p0, p1);
-    if (p2.y < p0.y) std::swap(p0, p2);
-    if (p2.y < p1.y) std::swap(p1, p2);
-
-    // Compute X coordinates and H values of the edges.
-    std::vector<int> x01 = interpolate(p0.y, p0.x, p1.y, p1.x);
-    std::vector<float> h01 = interpolate(p0.y, p0.h, p1.y, p1.h);
-
-    std::vector<int> x12 = interpolate(p1.y, p1.x, p2.y, p2.x);
-    std::vector<float> h12 = interpolate(p1.y, p1.h, p2.y, p2.h);
-
-    std::vector<int> x02 = interpolate(p0.y, p0.x, p2.y, p2.x);
-    std::vector<float> h02 = interpolate(p0.y, p0.h, p2.y, p2.h);
-
-    // Merge the two short sides.
-    std::vector<int> x012 = concat(x01, x12, 1);
-    std::vector<float> h012 = concat(h01, h12, 1);
-
-    // Determine which is left and which is right.
-    std::vector<int> x_left;
-    std::vector<int> x_right;
-    std::vector<float> h_left;
-    std::vector<float> h_right;
-    int m = (int) std::floor(x02.size() / 2);
-    if (x02[m] < x012[m]) {
-        x_left = x02;
-        x_right = x012;
-        h_left = h02;
-        h_right = h012;
-    } else {
-        x_left = x012;
-        x_right = x02;
-        h_left = h012;
-        h_right = h02;
-    }
-
-    // Draw horizontal segments.
-    for (int y = p0.y; y <= p2.y; y++) {
-        int xl = x_left[y - p0.y] | 0;
-        int xr = x_right[y - p0.y] | 0;
-        std::vector<float> h_segment = interpolate(xl, h_left[y - p0.y], xr, h_right[y - p0.y]);
-
-        for (int x = xl; x <= xr; x++) {
-
-            put_pixel(data, width, height, x, y, multiply(h_segment[x - xl], color));
-        }
-    }
+Point project_vertex(Vertex v) {
+    return viewport_to_canvas(
+        v.x * PROJECTION_PLANE_Z / v.z,
+        v.y * PROJECTION_PLANE_Z / v.z);
 }
 
 int main() {
-    int32_t width = 600;
-    int32_t height = 600;
-    uint8_t data[width * height][3];
+    uint8_t data[WIDTH * HEIGHT][3];
+    clear(data);
 
-    clear(data, width, height);
+    Vertex vA = Vertex(-2, -0.5, 5);
+    Vertex vB = Vertex(-2, 0.5, 5);
+    Vertex vC = Vertex(-1, 0.5, 5);
+    Vertex vD = Vertex(-1, -0.5, 5);
 
-    Point p0 = Point(-200, -250, 0.3);
-    Point p1 = Point(200, 50, 0.1);
-    Point p2 = Point(20, 250, 1.0);
+    Vertex vAb = Vertex(-2, -0.5, 6);
+    Vertex vBb = Vertex(-2, 0.5, 6);
+    Vertex vCb = Vertex(-1, 0.5, 6);
+    Vertex vDb = Vertex(-1, -0.5, 6);
 
-    draw_shaded_triangle(data, width, height, p0, p1, p2, {0, 255, 0});
+    rgb RED = {255, 0, 0};
+    rgb GREEN = {0, 255, 0};
+    rgb BLUE = {0, 0, 255};
 
-    if (std::getenv("OUT") && write_bmp_file("output.bmp", data, width, height)) {
+    draw_line(data, project_vertex(vA), project_vertex(vB), BLUE);
+    draw_line(data, project_vertex(vB), project_vertex(vC), BLUE);
+    draw_line(data, project_vertex(vC), project_vertex(vD), BLUE);
+    draw_line(data, project_vertex(vD), project_vertex(vA), BLUE);
+
+    draw_line(data, project_vertex(vAb), project_vertex(vBb), RED);
+    draw_line(data, project_vertex(vBb), project_vertex(vCb), RED);
+    draw_line(data, project_vertex(vCb), project_vertex(vDb), RED);
+    draw_line(data, project_vertex(vDb), project_vertex(vAb), RED);
+
+    draw_line(data, project_vertex(vA), project_vertex(vAb), GREEN);
+    draw_line(data, project_vertex(vB), project_vertex(vBb), GREEN);
+    draw_line(data, project_vertex(vC), project_vertex(vCb), GREEN);
+    draw_line(data, project_vertex(vD), project_vertex(vDb), GREEN);
+
+    if (std::getenv("OUT") && write_bmp_file("output.bmp", data, WIDTH, HEIGHT)) {
         std::cout << "Image written successfully." << std::endl;
     }
 
