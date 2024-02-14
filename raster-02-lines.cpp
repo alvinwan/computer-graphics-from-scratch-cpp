@@ -44,6 +44,16 @@ bool put_pixel(
     return true;
 }
 
+void clear(uint8_t data[][3], int width, int height) {
+    for (int x = 0; x < width; x++) {
+        for (int y = 0; y < height; y++) {
+            for (int i = 0; i < 3; i++) {
+                data[y * width + x][i] = 255;
+            }
+        }
+    }
+}
+
 // Data model
 
 struct Point {
@@ -103,16 +113,6 @@ void draw_line(uint8_t data[][3], int width, int height, Point p0, Point p1, rgb
         std::vector<int> xs = interpolate(p0.y, p0.x, p1.y, p1.x);
         for (int y = p0.y; y <= p1.y; y++) {
             put_pixel(data, width, height, xs[y - p0.y], y, color);
-        }
-    }
-}
-
-void clear(uint8_t data[][3], int width, int height) {
-    for (int x = 0; x < width; x++) {
-        for (int y = 0; y < height; y++) {
-            for (int i = 0; i < 3; i++) {
-                data[y * width + x][i] = 255;
-            }
         }
     }
 }
