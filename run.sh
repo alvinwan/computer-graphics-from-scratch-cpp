@@ -13,6 +13,7 @@ files=(
     "raster-03-triangle"
     "raster-04-shading"
     "raster-05-perspective"
+    "raster-06-cube"
 )
 
 for name in "${files[@]}"; do
