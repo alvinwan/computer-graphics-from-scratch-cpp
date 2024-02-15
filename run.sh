@@ -14,6 +14,7 @@ files=(
     "raster-04-shading"
     "raster-05-perspective"
     "raster-06-cube"
+    "raster-07-instances"
 )
 
 for name in "${files[@]}"; do
