@@ -25,7 +25,7 @@ const int PROJECTION_PLANE_Z = 1;
 
 // Canvas
 
-bool put_pixel(
+bool PutPixel(
     uint8_t data[WIDTH * HEIGHT][3],
     int32_t x,
     int32_t y,
@@ -49,7 +49,7 @@ bool put_pixel(
     return true;
 }
 
-void clear(uint8_t data[][3]) {
+void Clear(uint8_t data[][3]) {
     for (int x = 0; x < WIDTH; x++) {
         for (int y = 0; y < HEIGHT; y++) {
             for (int i = 0; i < 3; i++) {
@@ -125,7 +125,7 @@ struct Instance {
 
 // Linear algebra
 
-rgb multiply(float k, rgb vec) {
+rgb Multiply(float k, rgb vec) {
     return {
         (uint8_t) std::round(std::clamp<float>(k * vec[0], 0, 255)),
         (uint8_t) std::round(std::clamp<float>(k * vec[1], 0, 255)),
@@ -133,13 +133,13 @@ rgb multiply(float k, rgb vec) {
     };
 }
 
-Vertex add(Vertex v1, Vertex v2) {
+Vertex Add(Vertex v1, Vertex v2) {
     return Vertex(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z);
 }
 
 // Rasterization code
 
-std::vector<float> interpolate(int i0, float d0, int i1, float d1) {
+std::vector<float> Interpolate(int i0, float d0, int i1, float d1) {
     if (i0 == i1) {
         return {(float) d0};
     }
@@ -155,7 +155,7 @@ std::vector<float> interpolate(int i0, float d0, int i1, float d1) {
     return values;
 }
 
-std::vector<int> float_vector_to_int(const std::vector<float>& float_vec) {
+std::vector<int> FloatVectorToInt(const std::vector<float>& float_vec) {
     std::vector<int> int_vec(float_vec.size());
     for (size_t i = 0; i < float_vec.size(); ++i) {
         int_vec[i] = static_cast<int>(std::round(float_vec[i]));
@@ -163,11 +163,11 @@ std::vector<int> float_vector_to_int(const std::vector<float>& float_vec) {
     return int_vec;
 }
 
-std::vector<int> interpolate(int i0, int d0, int i1, int d1) {
-    return float_vector_to_int(interpolate(i0, (float) d0, i1, (float) d1));
+std::vector<int> Interpolate(int i0, int d0, int i1, int d1) {
+    return FloatVectorToInt(Interpolate(i0, (float) d0, i1, (float) d1));
 }
 
-void draw_line(uint8_t data[][3], Point p0, Point p1, rgb color) {
+void DrawLine(uint8_t data[][3], Point p0, Point p1, rgb color) {
     int dx = p1.x - p0.x;
     int dy = p1.y - p0.y;
 
@@ -176,43 +176,43 @@ void draw_line(uint8_t data[][3], Point p0, Point p1, rgb color) {
         if (dx < 0) std::swap(p0, p1);
 
         // Compute the Y values and draw.
-        std::vector<int> ys = interpolate(p0.x, p0.y, p1.x, p1.y);
+        std::vector<int> ys = Interpolate(p0.x, p0.y, p1.x, p1.y);
         for (int x = p0.x; x <= p1.x; x++) {
-            put_pixel(data, x, ys[x - p0.x], color);
+            PutPixel(data, x, ys[x - p0.x], color);
         }
     } else {
         // The line is verical-ish. Make sure it's bottom to top.
         if (dy < 0) std::swap(p0, p1);
 
         // Compute the X values and draw.
-        std::vector<int> xs = interpolate(p0.y, p0.x, p1.y, p1.x);
+        std::vector<int> xs = Interpolate(p0.y, p0.x, p1.y, p1.x);
         for (int y = p0.y; y <= p1.y; y++) {
-            put_pixel(data, xs[y - p0.y], y, color);
+            PutPixel(data, xs[y - p0.y], y, color);
         }
     }
 }
 
-void draw_wireframe_triangle(uint8_t data[WIDTH * HEIGHT][3], Point p0, Point p1, Point p2, rgb color) {
-    draw_line(data, p0, p1, color);
-    draw_line(data, p1, p2, color);
-    draw_line(data, p0, p2, color);
+void DrawWireframeTriangle(uint8_t data[WIDTH * HEIGHT][3], Point p0, Point p1, Point p2, rgb color) {
+    DrawLine(data, p0, p1, color);
+    DrawLine(data, p1, p2, color);
+    DrawLine(data, p0, p2, color);
 }
 
 // Converts 2D viewport coordinates to 2D canvas coordinates.
-Point viewport_to_canvas(float vx, float vy) {
+Point ViewportToCanvas(float vx, float vy) {
     return Point(
         (int) std::round(vx * WIDTH / VIEWPORT_SIZE),
         (int) std::round(vy * HEIGHT / VIEWPORT_SIZE));
 }
 
-Point project_vertex(Vertex v) {
-    return viewport_to_canvas(
+Point ProjectVertex(Vertex v) {
+    return ViewportToCanvas(
         v.x * PROJECTION_PLANE_Z / v.z,
         v.y * PROJECTION_PLANE_Z / v.z);
 }
 
-void render_triangle(uint8_t data[WIDTH*HEIGHT][3], Triangle triangle, std::vector<Point> projected) {
-    draw_wireframe_triangle(
+void RenderTriangle(uint8_t data[WIDTH*HEIGHT][3], Triangle triangle, std::vector<Point> projected) {
+    DrawWireframeTriangle(
         data,
         projected[triangle.v0],
         projected[triangle.v1],
@@ -220,26 +220,26 @@ void render_triangle(uint8_t data[WIDTH*HEIGHT][3], Triangle triangle, std::vect
         triangle.color);
 }
 
-void render_instance(uint8_t data[WIDTH*HEIGHT][3], Instance instance) {
+void RenderInstance(uint8_t data[WIDTH*HEIGHT][3], Instance instance) {
     std::vector<Point> projected;
     Model model = instance.model;
     for (int i = 0; i < model.vertices.size(); i++) {
-        projected.push_back(project_vertex(add(instance.position, model.vertices[i])));
+        projected.push_back(ProjectVertex(Add(instance.position, model.vertices[i])));
     }
     for (int i = 0; i < model.triangles.size(); i++) {
-        render_triangle(data, model.triangles[i], projected);
+        RenderTriangle(data, model.triangles[i], projected);
     }
 }
 
-void render_scene(uint8_t data[WIDTH*HEIGHT][3], std::vector<Instance> instances) {
+void RenderScene(uint8_t data[WIDTH*HEIGHT][3], std::vector<Instance> instances) {
     for (int i = 0; i < instances.size(); i++) {
-        render_instance(data, instances[i]);
+        RenderInstance(data, instances[i]);
     }
 }
 
 int main() {
     uint8_t data[WIDTH * HEIGHT][3];
-    clear(data);
+    Clear(data);
 
     std::vector<Vertex> vertices = {
         Vertex(1, 1, 1),
@@ -281,7 +281,7 @@ int main() {
         Instance(cube, Vertex(1.25, 2, 7.5))
     };
 
-    render_scene(data, instances);
+    RenderScene(data, instances);
 
     if (std::getenv("OUT") && write_bmp_file("output.bmp", data, WIDTH, HEIGHT)) {
         std::cout << "Image written successfully." << std::endl;

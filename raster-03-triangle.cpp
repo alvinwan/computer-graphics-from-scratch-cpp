@@ -20,7 +20,7 @@ const int32_t HEIGHT = 600;
 
 // Canvas
 
-bool put_pixel(
+bool PutPixel(
     uint8_t data[WIDTH * HEIGHT][3],
     int32_t x,
     int32_t y,
@@ -44,7 +44,7 @@ bool put_pixel(
     return true;
 }
 
-void clear(uint8_t data[][3]) {
+void Clear(uint8_t data[][3]) {
     for (int x = 0; x < WIDTH; x++) {
         for (int y = 0; y < HEIGHT; y++) {
             for (int i = 0; i < 3; i++) {
@@ -68,7 +68,7 @@ struct Point {
 
 // Rasterization code
 
-std::vector<int> interpolate(int i0, int d0, int i1, int d1) {
+std::vector<int> Interpolate(int i0, int d0, int i1, int d1) {
     if (i0 == i1) {
         return {d0};
     }
@@ -84,7 +84,7 @@ std::vector<int> interpolate(int i0, int d0, int i1, int d1) {
     return values;
 }
 
-void draw_line(uint8_t data[][3], Point p0, Point p1, rgb color) {
+void DrawLine(uint8_t data[][3], Point p0, Point p1, rgb color) {
     int dx = p1.x - p0.x;
     int dy = p1.y - p0.y;
 
@@ -93,37 +93,37 @@ void draw_line(uint8_t data[][3], Point p0, Point p1, rgb color) {
         if (dx < 0) std::swap(p0, p1);
 
         // Compute the Y values and draw.
-        std::vector<int> ys = interpolate(p0.x, p0.y, p1.x, p1.y);
+        std::vector<int> ys = Interpolate(p0.x, p0.y, p1.x, p1.y);
         for (int x = p0.x; x <= p1.x; x++) {
-            put_pixel(data, x, ys[x - p0.x], color);
+            PutPixel(data, x, ys[x - p0.x], color);
         }
     } else {
         // The line is verical-ish. Make sure it's bottom to top.
         if (dy < 0) std::swap(p0, p1);
 
         // Compute the X values and draw.
-        std::vector<int> xs = interpolate(p0.y, p0.x, p1.y, p1.x);
+        std::vector<int> xs = Interpolate(p0.y, p0.x, p1.y, p1.x);
         for (int y = p0.y; y <= p1.y; y++) {
-            put_pixel(data, xs[y - p0.y], y, color);
+            PutPixel(data, xs[y - p0.y], y, color);
         }
     }
 }
 
-void draw_wireframe_triangle(uint8_t data[WIDTH * HEIGHT][3], Point p0, Point p1, Point p2, rgb color) {
-    draw_line(data, p0, p1, color);
-    draw_line(data, p1, p2, color);
-    draw_line(data, p0, p2, color);
+void DrawWireframeTriangle(uint8_t data[WIDTH * HEIGHT][3], Point p0, Point p1, Point p2, rgb color) {
+    DrawLine(data, p0, p1, color);
+    DrawLine(data, p1, p2, color);
+    DrawLine(data, p0, p2, color);
 }
 
-void draw_filled_triangle(uint8_t data[WIDTH * HEIGHT][3], Point p0, Point p1, Point p2, rgb color) {
+void DrawFilledTriangle(uint8_t data[WIDTH * HEIGHT][3], Point p0, Point p1, Point p2, rgb color) {
     if (p1.y < p0.y) std::swap(p0, p1);
     if (p2.y < p0.y) std::swap(p0, p2);
     if (p2.y < p1.y) std::swap(p1, p2);
 
     // Compute X coordinates of the edges.
-    std::vector<int> x01 = interpolate(p0.y, p0.x, p1.y, p1.x);
-    std::vector<int> x12 = interpolate(p1.y, p1.x, p2.y, p2.x);
-    std::vector<int> x02 = interpolate(p0.y, p0.x, p2.y, p2.x);
+    std::vector<int> x01 = Interpolate(p0.y, p0.x, p1.y, p1.x);
+    std::vector<int> x12 = Interpolate(p1.y, p1.x, p2.y, p2.x);
+    std::vector<int> x02 = Interpolate(p0.y, p0.x, p2.y, p2.x);
 
     // Merge the two short sides.
     std::vector<int> x012;
@@ -146,7 +146,7 @@ void draw_filled_triangle(uint8_t data[WIDTH * HEIGHT][3], Point p0, Point p1, P
     // Draw horizontal segments.
     for (int y = p0.y; y <= p2.y; y++) {
         for (int x = x_left[y - p0.y]; x <= x_right[y - p0.y]; x++) {
-            put_pixel(data, x, y, color);
+            PutPixel(data, x, y, color);
         }
     }
 }
@@ -154,14 +154,14 @@ void draw_filled_triangle(uint8_t data[WIDTH * HEIGHT][3], Point p0, Point p1, P
 int main() {
     uint8_t data[WIDTH * HEIGHT][3];
 
-    clear(data);
+    Clear(data);
 
     Point p0 = Point(-200, -250);
     Point p1 = Point(200, 50);
     Point p2 = Point(20, 250);
 
-    draw_filled_triangle(data, p0, p1, p2, {0, 255, 0});
-    draw_wireframe_triangle(data, p0, p1, p2, {0, 0, 0});
+    DrawFilledTriangle(data, p0, p1, p2, {0, 255, 0});
+    DrawWireframeTriangle(data, p0, p1, p2, {0, 0, 0});
 
     if (std::getenv("OUT") && write_bmp_file("output.bmp", data, WIDTH, HEIGHT)) {
         std::cout << "Image written successfully." << std::endl;

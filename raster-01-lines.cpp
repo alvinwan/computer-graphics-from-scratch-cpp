@@ -21,7 +21,7 @@ const int32_t HEIGHT = 600;
 
 // Canvas
 
-bool put_pixel(
+bool PutPixel(
     uint8_t data[WIDTH * HEIGHT][3],
     int32_t x,
     int32_t y,
@@ -45,7 +45,7 @@ bool put_pixel(
     return true;
 }
 
-void clear(uint8_t data[][3]) {
+void Clear(uint8_t data[][3]) {
     for (int x = 0; x < WIDTH; x++) {
         for (int y = 0; y < HEIGHT; y++) {
             for (int i = 0; i < 3; i++) {
@@ -57,11 +57,11 @@ void clear(uint8_t data[][3]) {
 
 // Rasterization code
 
-void draw_line_broken(uint8_t data[][3], int x0, int y0, int x1, int y1, rgb color) {
+void DrawLineBroken(uint8_t data[][3], int x0, int y0, int x1, int y1, rgb color) {
     float a = ((float) y1 - y0) / (x1 - x0);
     float y = y0;
     for (int x = x0; x <= x1; x++) {
-        put_pixel(data, x, (int) std::round(y), color);
+        PutPixel(data, x, (int) std::round(y), color);
         y += a;
     }
 }
@@ -69,10 +69,10 @@ void draw_line_broken(uint8_t data[][3], int x0, int y0, int x1, int y1, rgb col
 int main() {
     uint8_t data[WIDTH * HEIGHT][3];
 
-    clear(data);
+    Clear(data);
 
-    draw_line_broken(data, -200, -100, 240, 120, {0, 0, 0});
-    draw_line_broken(data, -50, -200, 60, 240, {0, 0, 0});
+    DrawLineBroken(data, -200, -100, 240, 120, {0, 0, 0});
+    DrawLineBroken(data, -50, -200, 60, 240, {0, 0, 0});
 
     if (std::getenv("OUT") && write_bmp_file("output.bmp", data, WIDTH, HEIGHT)) {
         std::cout << "Image written successfully." << std::endl;
