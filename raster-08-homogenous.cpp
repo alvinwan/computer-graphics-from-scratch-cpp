@@ -148,6 +148,16 @@ struct Model {
     }
 };
 
+struct Instance {
+    Model model;
+    Mat4x4 transform;
+
+    Instance(Model v_model, Mat4x4 v_transform) {
+        model = v_model;
+        transform = v_transform;
+    }
+};
+
 struct Camera {
     Vertex position;
     Mat4x4 orientation;
@@ -247,23 +257,9 @@ Mat4x4 Transposed(Mat4x4 mat) {
 
 // Rasterization code
 
-// Technically, should create a header file so this struct can join the other
-// structs above.
-struct Instance {
-    Model model;
-    Vertex position;
-    Mat4x4 orientation;
-    float scale;
-    Mat4x4 transform;
-
-    Instance(Model v_model, Vertex v_position, Mat4x4 v_orientation = Identity4x4, float v_scale = 1) {
-        model = v_model;
-        position = v_position;
-        orientation = v_orientation;
-        scale = v_scale;
-        transform = MultiplyMM4(MakeTranslationMatrix(v_position), MultiplyMM4(v_orientation, MakeScalingMatrix(v_scale)));
-    }
-};
+Mat4x4 BuildTransformMatrix(Vertex v_position, Mat4x4 v_orientation = Identity4x4, float v_scale = 1) {
+    return MultiplyMM4(MakeTranslationMatrix(v_position), MultiplyMM4(v_orientation, MakeScalingMatrix(v_scale)));
+}
 
 std::vector<float> Interpolate(int i0, float d0, int i1, float d1) {
     if (i0 == i1) {
@@ -409,8 +405,8 @@ int main() {
     Model cube = Model(vertices, triangles);
 
     std::vector<Instance> instances = {
-        Instance(cube, Vertex(-1.5, 0, 7), Identity4x4, 0.75),
-        Instance(cube, Vertex(1.25, 2, 7.5), MakeOYRotationMatrix(195), 1)
+        Instance(cube, BuildTransformMatrix(Vertex(-1.5, 0, 7), Identity4x4, 0.75)),
+        Instance(cube, BuildTransformMatrix(Vertex(1.25, 2, 7.5), MakeOYRotationMatrix(195), 1))
     };
 
     RenderScene(data, camera, instances);
