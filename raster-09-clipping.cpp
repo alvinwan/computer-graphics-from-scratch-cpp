@@ -9,7 +9,7 @@ g++ raster-09-clipping.cpp -o main.out -std=c++20 -Ofast
 open output.bmp
 ```
 
-Implementation for https://gabrielgambetta.com/computer-graphics-from-scratch/demos/raster-08.html
+Implementation for https://gabrielgambetta.com/computer-graphics-from-scratch/demos/raster-09.html
 */
 #include "bmp.h"
 #include <vector>

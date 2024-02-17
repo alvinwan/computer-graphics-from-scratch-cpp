@@ -255,11 +255,11 @@ Mat4x4 Transposed(Mat4x4 mat) {
   return result;
 }
 
-// Rasterization code
-
 Mat4x4 BuildTransformMatrix(Vertex v_position, Mat4x4 v_orientation = Identity4x4, float v_scale = 1) {
     return MultiplyMM4(MakeTranslationMatrix(v_position), MultiplyMM4(v_orientation, MakeScalingMatrix(v_scale)));
 }
+
+// Rasterization code
 
 std::vector<float> Interpolate(int i0, float d0, int i1, float d1) {
     if (i0 == i1) {
