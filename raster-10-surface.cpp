@@ -447,9 +447,7 @@ std::tuple<std::vector<T>, std::vector<T>> EdgeInterpolate(int y0, T v0, int y1,
 void RenderTriangle(uint8_t data[WIDTH*HEIGHT][3], float depth_buffer[WIDTH*HEIGHT], Triangle triangle, std::vector<Vertex> vertices, std::vector<Point> projected) {
     // Sort by projected point Y.
     rgb indexes = SortedVertexIndexes(triangle.indexes, projected);
-    int i0 = indexes[0];
-    int i1 = indexes[1];
-    int i2 = indexes[2];
+    int i0 = indexes[0], i1 = indexes[1], i2 = indexes[2];
 
     Vertex v0 = vertices[triangle.indexes[i0]];
     Vertex v1 = vertices[triangle.indexes[i1]];
@@ -471,29 +469,16 @@ void RenderTriangle(uint8_t data[WIDTH*HEIGHT][3], float depth_buffer[WIDTH*HEIG
 
     // Compute attribute values at the edges.
     std::tuple xout = EdgeInterpolate(p0.y, p0.x, p1.y, p1.x, p2.y, p2.x);
-    std::vector<int> x02 = std::get<0>(xout);
-    std::vector<int> x012 = std::get<1>(xout);
+    std::vector<int> x_left = std::get<0>(xout), x_right = std::get<1>(xout);
     std::tuple izout = EdgeInterpolate(p0.y, (float) 1.0/v0.z, p1.y, (float) 1.0/v1.z, p2.y, (float) 1.0/v2.z);
-    std::vector<float> iz02 = std::get<0>(izout);
-    std::vector<float> iz012 = std::get<1>(izout);
+    std::vector<float> iz_left = std::get<0>(izout), iz_right = std::get<1>(izout);
 
 
     // Determine which is left and which is right.
-    std::vector<int> x_left;
-    std::vector<int> x_right;
-    std::vector<float> iz_left;
-    std::vector<float> iz_right;
-    int m = (int) std::floor(x02.size() / 2);
-    if (x02[m] < x012[m]) {
-        x_left = x02;
-        x_right = x012;
-        iz_left = iz02;
-        iz_right = iz012;
-    } else {
-        x_left = x012;
-        x_right = x02;
-        iz_left = iz012;
-        iz_right = iz02;
+    int m = (int) std::floor(x_left.size() / 2);
+    if (x_left[m] >= x_right[m]) {
+        std::swap(x_left, x_right);
+        std::swap(iz_left, iz_right);
     }
 
     // Draw horizontal segments.

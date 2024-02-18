@@ -528,9 +528,7 @@ std::tuple<std::vector<T>, std::vector<T>> EdgeInterpolate(int y0, T v0, int y1,
 void RenderTriangle(uint8_t data[WIDTH*HEIGHT][3], float depth_buffer[WIDTH*HEIGHT], Triangle triangle, std::vector<Vertex> vertices, std::vector<Point> projected, Camera camera, std::vector<Light> lights, Mat4x4 orientation) {
     // Sort by projected point Y.
     rgb indexes = SortedVertexIndexes(triangle.indexes, projected);
-    int i0 = indexes[0];
-    int i1 = indexes[1];
-    int i2 = indexes[2];
+    int i0 = indexes[0], i1 = indexes[1], i2 = indexes[2];
 
     Vertex v0 = vertices[triangle.indexes[i0]];
     Vertex v1 = vertices[triangle.indexes[i1]];
@@ -552,16 +550,12 @@ void RenderTriangle(uint8_t data[WIDTH*HEIGHT][3], float depth_buffer[WIDTH*HEIG
 
     // Compute attribute values at the edges.
     std::tuple xout = EdgeInterpolate(p0.y, p0.x, p1.y, p1.x, p2.y, p2.x);
-    std::vector<int> x02 = std::get<0>(xout);
-    std::vector<int> x012 = std::get<1>(xout);
+    std::vector<int> x_left = std::get<0>(xout), x_right = std::get<1>(xout);
     std::tuple izout = EdgeInterpolate(p0.y, (float) 1.0/v0.z, p1.y, (float) 1.0/v1.z, p2.y, (float) 1.0/v2.z);
-    std::vector<float> iz02 = std::get<0>(izout);
-    std::vector<float> iz012 = std::get<1>(izout);
+    std::vector<float> iz_left = std::get<0>(izout), iz_right = std::get<1>(izout);
 
     // Use model normals instead of vertex normals
-    Vertex normal0;
-    Vertex normal1;
-    Vertex normal2;
+    Vertex normal0, normal1, normal2;
     if (USE_VERTEX_NORMALS) {
         Mat4x4 transform = MultiplyMM4(Transposed(camera.orientation), orientation);
         normal0 = MultiplyMV(transform, triangle.normals[i0]);
@@ -573,14 +567,7 @@ void RenderTriangle(uint8_t data[WIDTH*HEIGHT][3], float depth_buffer[WIDTH*HEIG
         normal2 = normal;
     }
 
-    std::vector<float> i02;
-    std::vector<float> i012;
-    std::vector<float> nx02;
-    std::vector<float> nx012;
-    std::vector<float> ny02;
-    std::vector<float> ny012;
-    std::vector<float> nz02;
-    std::vector<float> nz012;
+    std::vector<float> i_left, i_right, nx_left, nx_right, ny_left, ny_right, nz_left, nz_right;
     float intensity;
     if (SHADING_MODEL == FLAT) {
         // Flat shading: compute lighting for the entire triangle
@@ -592,60 +579,25 @@ void RenderTriangle(uint8_t data[WIDTH*HEIGHT][3], float depth_buffer[WIDTH*HEIG
         float i1 = ComputeIllumination(v1, normal1, camera, lights);
         float i2 = ComputeIllumination(v2, normal2, camera, lights);
         std::tuple i0x = EdgeInterpolate(p0.y, i0, p1.y, i1, p2.y, i2);
-        std::vector<float> i02 = std::get<0>(i0x);
-        std::vector<float> i012 = std::get<1>(i0x);
+        std::vector<float> i_left = std::get<0>(i0x), i_right = std::get<1>(i0x);
     } else if (SHADING_MODEL == PHONG) {
         std::tuple nx = EdgeInterpolate(p0.y, normal0.x, p1.y, normal1.x, p2.y, normal2.x);
         std::tuple ny = EdgeInterpolate(p0.y, normal0.y, p1.y, normal1.y, p2.y, normal2.y);
         std::tuple nz = EdgeInterpolate(p0.y, normal0.z, p1.y, normal1.z, p2.y, normal2.z);
-        nx02 = std::get<0>(nx);
-        nx012 = std::get<1>(nx);
-        ny02 = std::get<0>(ny);
-        ny012 = std::get<1>(ny);
-        nz02 = std::get<0>(nz);
-        nz012 = std::get<1>(nz);
+        nx_left = std::get<0>(nx), nx_right = std::get<1>(nx);
+        ny_left = std::get<0>(ny), ny_right = std::get<1>(ny);
+        nz_left = std::get<0>(nz), nz_right = std::get<1>(nz);
     }
 
     // Determine which is left and which is right.
-    std::vector<int> x_left;
-    std::vector<int> x_right;
-    std::vector<float> iz_left;
-    std::vector<float> iz_right;
-    std::vector<float> i_left;
-    std::vector<float> i_right;
-    std::vector<float> nx_left;
-    std::vector<float> nx_right;
-    std::vector<float> ny_left;
-    std::vector<float> ny_right;
-    std::vector<float> nz_left;
-    std::vector<float> nz_right;
-    int m = (int) std::floor(x02.size() / 2);
-    if (x02[m] < x012[m]) {
-        x_left = x02;
-        x_right = x012;
-        iz_left = iz02;
-        iz_right = iz012;
-        i_left = i02;
-        i_right = i012;
-        nx_left = nx02;
-        nx_right = nx012;
-        ny_left = ny02;
-        ny_right = ny012;
-        nz_left = nz02;
-        nz_right = nz012;
-    } else {
-        x_left = x012;
-        x_right = x02;
-        iz_left = iz012;
-        iz_right = iz02;
-        i_left = i012;
-        i_right = i02;
-        nx_left = nx012;
-        nx_right = nx02;
-        ny_left = ny012;
-        ny_right = ny02;
-        nz_left = nz012;
-        nz_right = nz02;
+    int m = (int) std::floor(x_left.size() / 2);
+    if (x_left[m] >= x_right[m]) {
+        std::swap(x_left, x_right);
+        std::swap(iz_left, iz_right);
+        std::swap(i_left, i_right);
+        std::swap(nx_left, nx_right);
+        std::swap(ny_left, ny_right);
+        std::swap(nz_left, nz_right);
     }
 
     // Draw horizontal segments.
@@ -658,10 +610,7 @@ void RenderTriangle(uint8_t data[WIDTH*HEIGHT][3], float depth_buffer[WIDTH*HEIG
         float zr = iz_right[y - p0.y];
         std::vector<float> zscan = Interpolate(xl, zl, xr, zr);
 
-        std::vector<float> iscan;
-        std::vector<float> nxscan;
-        std::vector<float> nyscan;
-        std::vector<float> nzscan;
+        std::vector<float> iscan, nxscan, nyscan, nzscan;
         if (SHADING_MODEL == GOURAUD) {
             iscan = Interpolate(xl, i_left[y - p0.y], xr, i_right[y - p0.y]);
         } else if (SHADING_MODEL == PHONG) {
