@@ -447,10 +447,13 @@ std::tuple<std::vector<T>, std::vector<T>> EdgeInterpolate(int y0, T v0, int y1,
 void RenderTriangle(uint8_t data[WIDTH*HEIGHT][3], float depth_buffer[WIDTH*HEIGHT], Triangle triangle, std::vector<Vertex> vertices, std::vector<Point> projected) {
     // Sort by projected point Y.
     rgb indexes = SortedVertexIndexes(triangle.indexes, projected);
+    int i0 = indexes[0];
+    int i1 = indexes[1];
+    int i2 = indexes[2];
 
-    Vertex v0 = vertices[triangle.indexes[indexes[0]]];
-    Vertex v1 = vertices[triangle.indexes[indexes[1]]];
-    Vertex v2 = vertices[triangle.indexes[indexes[2]]];
+    Vertex v0 = vertices[triangle.indexes[i0]];
+    Vertex v1 = vertices[triangle.indexes[i1]];
+    Vertex v2 = vertices[triangle.indexes[i2]];
 
     // Compute triangle normal. Use the unsorted vertices, otherwise the winding of the points may change.
     Vertex normal = ComputeTriangleNormal(vertices[triangle.indexes[0]], vertices[triangle.indexes[1]], vertices[triangle.indexes[2]]);
@@ -462,9 +465,9 @@ void RenderTriangle(uint8_t data[WIDTH*HEIGHT][3], float depth_buffer[WIDTH*HEIG
     }
 
     // Get attribute values (X, 1/Z) at the vertices.
-    Point p0 = projected[triangle.indexes[indexes[0]]];
-    Point p1 = projected[triangle.indexes[indexes[1]]];
-    Point p2 = projected[triangle.indexes[indexes[2]]];
+    Point p0 = projected[triangle.indexes[i0]];
+    Point p1 = projected[triangle.indexes[i1]];
+    Point p2 = projected[triangle.indexes[i2]];
 
     // Compute attribute values at the edges.
     std::tuple xout = EdgeInterpolate(p0.y, p0.x, p1.y, p1.x, p2.y, p2.x);
