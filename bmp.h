@@ -91,3 +91,53 @@ bool write_bmp_file(const std::string& filename, const uint8_t data[][3], int32_
         return false;
     }
 }
+
+bool read_bmp_file(const std::string filename, uint8_t data[][3], int32_t width, int32_t height) {
+    // Open the file in binary mode
+    std::ifstream file(filename, std::ios::binary);
+    if (!file.is_open()) {
+        std::cerr << "Error: Could not open file '" << filename << "'." << std::endl;
+        return false;
+    }
+
+    BMPFileHeader file_header;
+    BMPInfoHeader info_header;
+
+    // Read the file headers
+    file.read((char*)&file_header, sizeof(file_header));
+    file.read((char*)&info_header, sizeof(info_header));
+
+    // Validate the BMP headers
+    if (file_header.file_type != 0x4D42 || info_header.bit_count != 24) {
+        std::cerr << "Error: Invalid BMP file." << std::endl;
+        return false;
+    }
+
+    width = info_header.width;
+    height = info_header.height;
+
+    // Calculate padding for each row (must be divisible by 4)
+    int padding = (4 - ((info_header.width * 3) % 4)) % 4;
+
+    // Read the pixel data
+    for (int32_t y = height - 1; y >= 0; y--) {
+        for (int32_t x = 0; x < width; x++) {
+            const uint8_t* rgb = data[y * width + x];
+            file.read((char*)&rgb[2], 1); // blue
+            file.read((char*)&rgb[1], 1); // green
+            file.read((char*)&rgb[0], 1); // red
+        }
+        // Skip padding bytes
+        file.seekg(padding, std::ios_base::cur);
+    }
+
+    file.close();
+
+    if (file.good()) {
+        std::cout << "BMP file '" << filename << "' read successfully." << std::endl;
+        return true;
+    } else {
+        std::cerr << "Error: Error reading data from file." << std::endl;
+        return false;
+    }
+}
