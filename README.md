@@ -71,7 +71,7 @@ pip install Pillow requests
 python tools/download_texture.py
 ```
 
-Build and run all demos using the following, *after install Python dependencies above*:
+Build and run all demos using the following, *after installing Python dependencies above*:
 
 ```bash
 bash tools/run.sh
