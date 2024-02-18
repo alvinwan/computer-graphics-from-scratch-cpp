@@ -1,12 +1,12 @@
 # "Computer Graphics from Scratch" in C++
-Standalone C++ implementation of raycasting and rasterization, without external
+Standalone C++ implementation of raytracing and rasterization, without external
 libraries or frameworks.
 - The demos come from "Computer Graphics from Scratch" ([book](https://gabrielgambetta.com/computer-graphics-from-scratch/)), which provides [Javascript demos](https://github.com/ggambetta/computer-graphics-from-scratch).
 - Additionally implements features from "Extending the Raytracer" that weren't implemented in the original source code.
 
-## Raycaster Demos
+## Raytracer Demos
 
-These demos are all written in FP32, as opposed to the original Javascript demos that use FP64 by default. This results in [shadow acne](https://imgur.com/a/ycB69zX) in all raycasting demos after Raycaster 04. To fix this, I added an epsilon reflection ray bias (e.g., start the reflection ray at an epsilon offset along the surface normal). The previews below include this fix.
+These demos are all written in FP32, as opposed to the original Javascript demos that use FP64 by default. This results in [shadow acne](https://imgur.com/a/ycB69zX) in all raytracing demos after Raytracer 04. To fix this, I added an epsilon reflection ray bias (e.g., start the reflection ray at an epsilon offset along the surface normal). The previews below include this fix.
 
 | [Raytracer 01 - Basic](https://github.com/alvinwan/computer-graphics-from-scratch-cpp/blob/main/raytracer-01-basic.cpp) | [Raytracer 02 - Diffuse](https://github.com/alvinwan/computer-graphics-from-scratch-cpp/blob/main/raytracer-02-diffuse.cpp) | [Raytracer 03 - Specular](https://github.com/alvinwan/computer-graphics-from-scratch-cpp/blob/main/raytracer-03-specular.cpp) |
 |---|---|---|
@@ -49,7 +49,7 @@ The C++ implementations below differ slightly from their Javascript counterparts
 > **Note**: The instructions below assume you're in the repository root.
 
 To get started, pick any demo script to build. For example, the first demo for
-raycasting is in `demos/raytracer-01-basic.cpp`. To build and run it, use the following
+raytracing is in `demos/raytracer-01-basic.cpp`. To build and run it, use the following
 
 ```bash
 g++ demos/raytracer-01-basic.cpp -o main.out -std=c++20

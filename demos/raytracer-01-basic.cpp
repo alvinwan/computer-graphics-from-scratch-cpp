@@ -1,7 +1,7 @@
 /*
 Raycast 01
 ==========
-Implements a simple raycast in a scene with 3 spheres.
+Implements a simple raytracer in a scene with 3 spheres.
 
 In theory, we'd need to use double precision to match Javascript's default fp64
 number format, per MDN's web docs; this turns out to be necessary later on to
