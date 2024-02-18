@@ -1,15 +1,15 @@
 /*
 Raster 11
 =========
-Fill triangles, and remove hidden surfaces
+Add shading
 
 ```bash
-g++ raster-10-surface.cpp -o main.out -std=c++20 -Ofast
+g++ raster-11-shading.cpp -o main.out -std=c++20 -Ofast
 ./main.out
 open output.bmp
 ```
 
-Implementation for https://gabrielgambetta.com/computer-graphics-from-scratch/demos/raster-10.html
+Implementation for https://gabrielgambetta.com/computer-graphics-from-scratch/demos/raster-11.html
 */
 #include "bmp.h"
 #include <vector>
