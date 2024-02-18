@@ -19,6 +19,7 @@ files=(
     "raster-09-clipping"
     "raster-10-surface"
     "raster-11-shading"
+    "raster-12-texture"
 )
 
 for name in "${files[@]}"; do
