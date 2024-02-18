@@ -22,6 +22,11 @@ files=(
     "raster-12-texture"
 )
 
+# download and convert texture used for raster-12-texture if not already done so
+if [[ ! -f crate-texture.bmp ]]; then
+   python download_texture.py  # Before running this script, install deps
+fi
+
 for name in "${files[@]}"; do
     g++ $name.cpp -o main.out -std=c++20 -Ofast && OUT=true ./main.out && ~/imgcat output.bmp;
 done;

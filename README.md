@@ -59,7 +59,15 @@ This gives the following output, which matches the output from the original.
 |---|---|
 | ![https://i.imgur.com/yEfIoTv.png](https://i.imgur.com/yEfIoTv.png) | ![https://i.imgur.com/eJv6tLr.png](https://i.imgur.com/eJv6tLr.png) |
 
-Alternatively, build and run all demos using
+Before running `raster-12-texture.cpp`, download and convert the texture map
+using the provided Python script.
+
+```bash
+pip install Pillow requests
+python download_texture.py
+```
+
+Build and run all demos using the following, *after install Python dependencies above*:
 
 ```bash
 bash run.sh
