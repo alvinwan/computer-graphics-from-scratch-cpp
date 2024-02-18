@@ -28,8 +28,9 @@ if response.status_code == 200:
 else:
     print(f"Error downloading texture: {response.status_code}")
 
+# Convert the file from jpg to bmp, a 'raw' format that our C++ code can easily
+# parse and use.
 outname = './crate-texture.bmp'
 with Image.open('crate-texture.jpg') as im:
     im.save(outname)
-
 print(f"Texture converted successfully as {outname}")
