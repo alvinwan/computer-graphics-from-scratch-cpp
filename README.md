@@ -23,7 +23,7 @@ These implement various features from "Extending the Raytracer".
 
 | [Raytracer 07 - Triangle](https://github.com/alvinwan/computer-graphics-from-scratch-cpp/blob/main/raytracer-07-triangles.cpp) | [Raytracer 08 - CSG](https://github.com/alvinwan/computer-graphics-from-scratch-cpp/blob/main/raytracer-08-csg.cpp) | [Raytracer 09 - Optimization](https://github.com/alvinwan/computer-graphics-from-scratch-cpp/blob/main/raytracer-09-optimization.cpp) |
 |---|---|---|
-| ![https://i.imgur.com/aieNAAV.png](https://i.imgur.com/aieNAAV.png) | ![https://i.imgur.com/I6g19L4.png](https://i.imgur.com/I6g19L4.png) | ![https://i.imgur.com/cit6dSq.png](https://i.imgur.com/cit6dSq.png) |
+| ![https://i.imgur.com/rp5QPvT.png](https://i.imgur.com/rp5QPvT.png) | ![https://i.imgur.com/9kdM0rv.png](https://i.imgur.com/9kdM0rv.png) | ![https://i.imgur.com/wts7Tjg.png](https://i.imgur.com/wts7Tjg.png) |
 
 ## Rasterization Demos
 
