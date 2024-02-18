@@ -9,11 +9,11 @@ implementations.
 
 > The C++ demos are written in FP32, as opposed to the original Javascript demos that use FP64 by default. This results in [shadow acne](https://imgur.com/a/ycB69zX) in all raycasting demos after Raycaster 04. To fix this, I added an epsilon reflection ray bias (e.g., start the reflection ray at an epsilon offset along the surface normal). The previews below include this fix.
 
-| Raytracer 01 - Basic | Raytracer 02 - Diffuse | Raytracer 03 - Specular |
+| [Raytracer 01 - Basic](https://github.com/alvinwan/computer-graphics-from-scratch-cpp/blob/main/raytracer-01-basic.cpp) | [Raytracer 02 - Diffuse](https://github.com/alvinwan/computer-graphics-from-scratch-cpp/blob/main/raytracer-02-diffuse.cpp) | [Raytracer 03 - Specular](https://github.com/alvinwan/computer-graphics-from-scratch-cpp/blob/main/raytracer-03-specular.cpp) |
 |---|---|---|
 | ![https://i.imgur.com/ziIToN5.png](https://i.imgur.com/ziIToN5.png) | ![https://i.imgur.com/yaXHtUk.png](https://i.imgur.com/yaXHtUk.png) | ![https://i.imgur.com/bMobaeB.png](https://i.imgur.com/bMobaeB.png) |
 
-| Raytracer 04 - Shadow | Raytracer 05 - Reflection | Raytracer 06 - Camera |
+| [Raytracer 04 - Shadow](https://github.com/alvinwan/computer-graphics-from-scratch-cpp/blob/main/raytracer-04-shadow.cpp) | [Raytracer 05 - Reflection](https://github.com/alvinwan/computer-graphics-from-scratch-cpp/blob/main/raytracer-05-reflection.cpp) | [Raytracer 06 - Camera](https://github.com/alvinwan/computer-graphics-from-scratch-cpp/blob/main/raytracer-06-camera.cpp) |
 |---|---|---|
 | ![https://i.imgur.com/LxoOVys.png](https://i.imgur.com/LxoOVys.png) | ![https://i.imgur.com/RT13thh.png](https://i.imgur.com/RT13thh.png) | ![https://i.imgur.com/B5Tm1CX.png](https://i.imgur.com/B5Tm1CX.png) |
 
@@ -21,25 +21,25 @@ implementations.
 
 These implement various features from "Extending the Raytracer".
 
-| Raytracer 07 - Triangle | Raytracer 08 - CSG | Raytracer 09 - Optimization |
+| [Raytracer 07 - Triangle](https://github.com/alvinwan/computer-graphics-from-scratch-cpp/blob/main/raytracer-07-triangles.cpp) | [Raytracer 08 - CSG](https://github.com/alvinwan/computer-graphics-from-scratch-cpp/blob/main/raytracer-08-csg.cpp) | [Raytracer 09 - Optimization](https://github.com/alvinwan/computer-graphics-from-scratch-cpp/blob/main/raytracer-09-optimization.cpp) |
 |---|---|---|
 | ![https://i.imgur.com/aieNAAV.png](https://i.imgur.com/aieNAAV.png) | ![https://i.imgur.com/I6g19L4.png](https://i.imgur.com/I6g19L4.png) | ![https://i.imgur.com/cit6dSq.png](https://i.imgur.com/cit6dSq.png) |
 
 ## Rasterization Demos
 
-| Raster 01 - Lines | Raster 02 - Lines (Fixed) | Raster 03 - Triangle |
+| [Raster 01 - Lines](https://github.com/alvinwan/computer-graphics-from-scratch-cpp/blob/main/raster-01-lines.cpp) | [Raster 02 - Lines (Fixed)](https://github.com/alvinwan/computer-graphics-from-scratch-cpp/blob/main/raster-02-lines.cpp) | [Raster 03 - Triangle](https://github.com/alvinwan/computer-graphics-from-scratch-cpp/blob/main/raster-03-triangle.cpp) |
 |---|---|---|
 | ![https://i.imgur.com/pZXyTU3.png](https://i.imgur.com/pZXyTU3.png) | ![https://i.imgur.com/dALZfnD.png](https://i.imgur.com/dALZfnD.png) | ![https://i.imgur.com/7WuJ6WR.png](https://i.imgur.com/7WuJ6WR.png) |
 
-| Raster 04 - Shading | Raster 05 - Perspective | Raster 06 - Cube |
+| [Raster 04 - Shading](https://github.com/alvinwan/computer-graphics-from-scratch-cpp/blob/main/raster-04-shading.cpp) | [Raster 05 - Perspective](https://github.com/alvinwan/computer-graphics-from-scratch-cpp/blob/main/raster-05-perspective.cpp) | [Raster 06 - Cube](https://github.com/alvinwan/computer-graphics-from-scratch-cpp/blob/main/raster-06-cube.cpp) |
 |---|---|---|
 | ![https://i.imgur.com/EWAyk3K.png](https://i.imgur.com/EWAyk3K.png) | ![https://i.imgur.com/GpJoYPp.png](https://i.imgur.com/GpJoYPp.png) | ![https://i.imgur.com/tfZXeZV.png](https://i.imgur.com/tfZXeZV.png) |
 
-| Raster 07 - Instances | Raster 08 - Homogenous | Raster 09 - Clipping |
+| [Raster 07 - Instances](https://github.com/alvinwan/computer-graphics-from-scratch-cpp/blob/main/raster-07-instances.cpp) | [Raster 08 - Homogenous](https://github.com/alvinwan/computer-graphics-from-scratch-cpp/blob/main/raster-08-homogenous.cpp) | [Raster 09 - Clipping](https://github.com/alvinwan/computer-graphics-from-scratch-cpp/blob/main/raster-09-clipping.cpp) |
 |---|---|---|
 | ![https://i.imgur.com/KrbLL6Z.png](https://i.imgur.com/KrbLL6Z.png) | ![https://i.imgur.com/O0ALrdz.png](https://i.imgur.com/O0ALrdz.png) | ![https://i.imgur.com/qMdhkBA.png](https://i.imgur.com/qMdhkBA.png) |
 
-| Raster 10 - Surface | Raster 11 - Shading | Raster 12 - Texture |
+| [Raster 10 - Surface](https://github.com/alvinwan/computer-graphics-from-scratch-cpp/blob/main/raster-10-surface.cpp) | [Raster 11 - Shading](https://github.com/alvinwan/computer-graphics-from-scratch-cpp/blob/main/raster-11-shading.cpp) | [Raster 12 - Texture](https://github.com/alvinwan/computer-graphics-from-scratch-cpp/blob/main/raster-12-texture.cpp) |
 |---|---|---|
 | ![https://i.imgur.com/tbswzYt.png](https://i.imgur.com/tbswzYt.png) | ![https://i.imgur.com/Ja4mIuk.png](https://i.imgur.com/Ja4mIuk.png) | ![https://i.imgur.com/G1vMZcN.png](https://i.imgur.com/G1vMZcN.png) |
 
