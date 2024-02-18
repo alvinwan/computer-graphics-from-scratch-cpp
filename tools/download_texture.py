@@ -4,6 +4,10 @@ Download and convert texture map used for Raster 12 (Texture)
 Before running this file, install prerequisites:
 
     pip install Pillow requests
+
+Then, run this script from the repository root like the following.
+
+    python tools/download_texture.py
 """
 
 from PIL import Image

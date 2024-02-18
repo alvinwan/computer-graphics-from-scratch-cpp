@@ -46,11 +46,13 @@ The C++ implementations below differ slightly from their Javascript counterparts
 
 ## Getting Started
 
+> **Note**: The instructions below assume you're in the repository root.
+
 To get started, pick any demo script to build. For example, the first demo for
 raycasting is in `raytracer-01.cpp`. To build and run it, use the following
 
 ```bash
-g++ raytracer-01-basic.cpp -o main.out -std=c++20
+g++ demos/raytracer-01-basic.cpp -o main.out -std=c++20
 ./main.out
 open output.bmp
 ```
@@ -66,13 +68,13 @@ using the provided Python script.
 
 ```bash
 pip install Pillow requests
-python download_texture.py
+python tools/download_texture.py
 ```
 
 Build and run all demos using the following, *after install Python dependencies above*:
 
 ```bash
-bash run.sh
+bash tools/run.sh
 ```
 
 All scripts in this repository were tested using clang version 15.0.0.
