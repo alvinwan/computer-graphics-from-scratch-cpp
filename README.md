@@ -1,12 +1,12 @@
 # "Computer Graphics from Scratch" in C++
-C++ implementation of demos from "Computer Graphics from Scratch".
-
-Additionally implements features from "Extending the Raytracer", which didn't
-previously have implementations.
+Standalone C++ implementation of raycasting and rasterization, without external
+libraries or frameworks.
+- The demos come from "Computer Graphics from Scratch" ([book](https://gabrielgambetta.com/computer-graphics-from-scratch/)), which provides [Javascript demos](https://github.com/ggambetta/computer-graphics-from-scratch).
+- Additionally implements features from "Extending the Raytracer" that weren't implemented in the original source code.
 
 ## Raycaster Demos
 
-> The C++ demos are written in FP32, as opposed to the original Javascript demos that use FP64 by default. This results in [shadow acne](https://imgur.com/a/ycB69zX) in all raycasting demos after Raycaster 04. To fix this, I added an epsilon reflection ray bias (e.g., start the reflection ray at an epsilon offset along the surface normal). The previews below include this fix.
+These demos are all written in FP32, as opposed to the original Javascript demos that use FP64 by default. This results in [shadow acne](https://imgur.com/a/ycB69zX) in all raycasting demos after Raycaster 04. To fix this, I added an epsilon reflection ray bias (e.g., start the reflection ray at an epsilon offset along the surface normal). The previews below include this fix.
 
 | [Raytracer 01 - Basic](https://github.com/alvinwan/computer-graphics-from-scratch-cpp/blob/main/raytracer-01-basic.cpp) | [Raytracer 02 - Diffuse](https://github.com/alvinwan/computer-graphics-from-scratch-cpp/blob/main/raytracer-02-diffuse.cpp) | [Raytracer 03 - Specular](https://github.com/alvinwan/computer-graphics-from-scratch-cpp/blob/main/raytracer-03-specular.cpp) |
 |---|---|---|
@@ -18,13 +18,15 @@ previously have implementations.
 
 ## "Extending the Raytracer" Demos
 
-These implement various features from "Extending the Raytracer", which didn't previously have implementations in original source code.
+These implement various features from "Extending the Raytracer", which didn't previously have implementations.
 
 | [Raytracer 07 - Triangle](https://github.com/alvinwan/computer-graphics-from-scratch-cpp/blob/main/raytracer-07-triangles.cpp) | [Raytracer 08 - CSG](https://github.com/alvinwan/computer-graphics-from-scratch-cpp/blob/main/raytracer-08-csg.cpp) | [Raytracer 09 - Optimization](https://github.com/alvinwan/computer-graphics-from-scratch-cpp/blob/main/raytracer-09-optimization.cpp) |
 |---|---|---|
 | ![https://i.imgur.com/rp5QPvT.png](https://i.imgur.com/rp5QPvT.png) | ![https://i.imgur.com/9kdM0rv.png](https://i.imgur.com/9kdM0rv.png) | ![https://i.imgur.com/wts7Tjg.png](https://i.imgur.com/wts7Tjg.png) |
 
 ## Rasterization Demos
+
+The C++ implementations below differ slightly from their Javascript counterparts to improve efficiency.
 
 | [Raster 01 - Lines](https://github.com/alvinwan/computer-graphics-from-scratch-cpp/blob/main/raster-01-lines.cpp) | [Raster 02 - Lines (Fixed)](https://github.com/alvinwan/computer-graphics-from-scratch-cpp/blob/main/raster-02-lines.cpp) | [Raster 03 - Triangle](https://github.com/alvinwan/computer-graphics-from-scratch-cpp/blob/main/raster-03-triangle.cpp) |
 |---|---|---|
