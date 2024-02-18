@@ -1,9 +1,8 @@
 # "Computer Graphics from Scratch" in C++
 C++ implementation of demos from "Computer Graphics from Scratch".
 
-Additionally implements features from "Extending the Raytracer" and
-"Extending the Rasterizer" sections, which didn't previously have
-implementations.
+Additionally implements features from "Extending the Raytracer", which didn't
+previously have implementations.
 
 ## Raycaster Demos
 
@@ -17,9 +16,9 @@ implementations.
 |---|---|---|
 | ![https://i.imgur.com/LxoOVys.png](https://i.imgur.com/LxoOVys.png) | ![https://i.imgur.com/RT13thh.png](https://i.imgur.com/RT13thh.png) | ![https://i.imgur.com/B5Tm1CX.png](https://i.imgur.com/B5Tm1CX.png) |
 
-## Bonus Raytracer Demos
+## "Extending the Raytracer" Demos
 
-These implement various features from "Extending the Raytracer".
+These implement various features from "Extending the Raytracer", which didn't previously have implementations in original source code.
 
 | [Raytracer 07 - Triangle](https://github.com/alvinwan/computer-graphics-from-scratch-cpp/blob/main/raytracer-07-triangles.cpp) | [Raytracer 08 - CSG](https://github.com/alvinwan/computer-graphics-from-scratch-cpp/blob/main/raytracer-08-csg.cpp) | [Raytracer 09 - Optimization](https://github.com/alvinwan/computer-graphics-from-scratch-cpp/blob/main/raytracer-09-optimization.cpp) |
 |---|---|---|
