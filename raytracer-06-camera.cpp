@@ -25,7 +25,7 @@ const float EPSILON = 0.001;
 
 // Canvas
 
-bool put_pixel(
+bool PutPixel(
     uint8_t data[][3],
     int32_t width,
     int32_t height,
@@ -54,32 +54,32 @@ bool put_pixel(
 // Linear Algebra
 
 // Compute dot product between two 3d vectors
-float dot_product(float3 v1, float3 v2) {
+float DotProduct(float3 v1, float3 v2) {
     return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
 }
 
 // Length of vector
-float length(float3 vec) {
-    return sqrt(dot_product(vec, vec));
+float Length(float3 vec) {
+    return sqrt(DotProduct(vec, vec));
 }
 
-// Broadcasted multiply between scalar and a vector
-float3 multiply(float k, float3 vec) {
+// Broadcasted Multiply between scalar and a vector
+float3 Multiply(float k, float3 vec) {
     return {k * vec[0], k * vec[1], k * vec[2]};
 }
 
 // Elementwise addition between two 3d vectors
-float3 add(float3 v1, float3 v2) {
+float3 Add(float3 v1, float3 v2) {
     return {v1[0] + v2[0], v1[1] + v2[1], v1[2] + v2[2]};
 }
 
 // Elementwise subtraction between two 3d vectors. First minus second.
-float3 subtract(float3 v1, float3 v2) {
+float3 Subtract(float3 v1, float3 v2) {
     return {v1[0] - v2[0], v1[1] - v2[1], v1[2] - v2[2]};
 }
 
 // Multiply 3x3 matrix and 3x1 vector
-float3 matmul(float33 matrix, float3 vector) {
+float3 MultiplyMV(float33 matrix, float3 vector) {
     float3 out = {0, 0, 0};
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
@@ -89,7 +89,7 @@ float3 matmul(float33 matrix, float3 vector) {
     return out;
 }
 
-rgb clamp(float3 vec) {
+rgb Clamp(float3 vec) {
     return {
         (uint8_t) std::round(std::clamp<float>(vec[0], 0, 255)),
         (uint8_t) std::round(std::clamp<float>(vec[1], 0, 255)),
@@ -156,7 +156,7 @@ struct Scene {
 };
 
 // Convert 2d pixel coordinates to 3d viewport coordinates.
-float3 canvas_to_viewport(int32_t x, int32_t y, int32_t width, int32_t height) {
+float3 CanvasToViewport(int32_t x, int32_t y, int32_t width, int32_t height) {
     return { (float) x / width, (float) y / height, 1 };
 }
 
@@ -167,11 +167,11 @@ std::vector<float> intersect_ray_with_sphere(
     float3 direction,
     Sphere sphere
 ) {
-    float3 difference = subtract(origin, sphere.center);
+    float3 difference = Subtract(origin, sphere.center);
 
-    float a = dot_product(direction, direction);
-    float b = 2 * dot_product(difference, direction);
-    float c = dot_product(difference, difference) - sphere.radius * sphere.radius;
+    float a = DotProduct(direction, direction);
+    float b = 2 * DotProduct(difference, direction);
+    float c = DotProduct(difference, difference) - sphere.radius * sphere.radius;
 
     float discriminant = b * b - 4 * a * c;
     if (discriminant < 0) {
@@ -185,7 +185,7 @@ std::vector<float> intersect_ray_with_sphere(
 }
 
 // Find the closest intersection between a ray and the spheres in the scene.
-std::tuple<Sphere, float> closest_intersection(
+std::tuple<Sphere, float> ClosestIntersection(
     float3 origin,
     float3 direction,
     float min_t,
@@ -211,19 +211,19 @@ std::tuple<Sphere, float> closest_intersection(
 }
 
 // Compute the reflection of a ray on a surface defined by its normal
-float3 reflect_ray(float3 ray, float3 normal) {
-    return subtract(multiply(2 * dot_product(ray, normal), normal), ray);
+float3 ReflectRay(float3 ray, float3 normal) {
+    return Subtract(Multiply(2 * DotProduct(ray, normal), normal), ray);
 }
 
 // Compute lighting for the scene
-float compute_lighting(float3 point, float3 normal, float3 view, float specular, Scene scene) {
+float ComputeLighting(float3 point, float3 normal, float3 view, float specular, Scene scene) {
     float intensity = 0;
-    if (abs(length(normal) - 1) > 0.0001) {
-        std::cerr << "Error: Normal is not length 1 (" << length(normal) << ")" << std::endl;
+    if (abs(Length(normal) - 1) > 0.0001) {
+        std::cerr << "Error: Normal is not length 1 (" << Length(normal) << ")" << std::endl;
         return INFINITY;
     }
 
-    float length_v = length(view);
+    float length_v = Length(view);
 
     for (int i = 0; i < scene.lights.size(); i++) {
         Light light = scene.lights[i];
@@ -234,7 +234,7 @@ float compute_lighting(float3 point, float3 normal, float3 view, float specular,
             float shadow_t_max;
 
             if (light.ltype == POINT) {
-                vec_l = subtract(light.position, point);
+                vec_l = Subtract(light.position, point);
                 shadow_t_max = 1;
             } else {  // Light.DIRECTIONAL
                 vec_l = light.position;
@@ -242,21 +242,21 @@ float compute_lighting(float3 point, float3 normal, float3 view, float specular,
             }
 
             // Shadow check
-            std::tuple<Sphere, float> intersection = closest_intersection(point, vec_l, EPSILON, shadow_t_max, scene);
+            std::tuple<Sphere, float> intersection = ClosestIntersection(point, vec_l, EPSILON, shadow_t_max, scene);
             if (std::get<1>(intersection) != INFINITY) continue;
 
             // Diffuse
-            float n_dot_l = dot_product(normal, vec_l);
+            float n_dot_l = DotProduct(normal, vec_l);
             if (n_dot_l > 0) {
-                intensity += light.intensity * n_dot_l / (length(vec_l));
+                intensity += light.intensity * n_dot_l / (Length(vec_l));
             }
 
             // Specular, where vec_r is the 'perfect' reflection ray
             if (specular != -1) {
-                float3 vec_r = reflect_ray(vec_l, normal);
-                float r_dot_v = dot_product(vec_r, view);
+                float3 vec_r = ReflectRay(vec_l, normal);
+                float r_dot_v = DotProduct(vec_r, view);
                 if (r_dot_v > 0) {
-                    intensity += light.intensity * pow(r_dot_v / (length(vec_r) * length_v), specular);
+                    intensity += light.intensity * pow(r_dot_v / (Length(vec_r) * length_v), specular);
                 }
             }
         }
@@ -266,7 +266,7 @@ float compute_lighting(float3 point, float3 normal, float3 view, float specular,
 }
 
 // Traces a ray against the spheres in the scene
-float3 trace_ray(
+float3 TraceRay(
     float3 origin,
     float3 direction,
     float min_t,
@@ -274,7 +274,7 @@ float3 trace_ray(
     int32_t recursion_depth,
     Scene scene
 ) {
-    std::tuple<Sphere, float> intersection = closest_intersection(origin, direction, min_t, max_t, scene);
+    std::tuple<Sphere, float> intersection = ClosestIntersection(origin, direction, min_t, max_t, scene);
     Sphere closest_sphere = std::get<0>(intersection);
     float closest_t = std::get<1>(intersection);
 
@@ -282,12 +282,12 @@ float3 trace_ray(
         return scene.background_color;
     }
 
-    float3 point = add(origin, multiply(closest_t, direction));
-    float3 normal = subtract(point, closest_sphere.center);
-    normal = multiply(1 / length(normal), normal);
+    float3 point = Add(origin, Multiply(closest_t, direction));
+    float3 normal = Subtract(point, closest_sphere.center);
+    normal = Multiply(1 / Length(normal), normal);
 
-    float intensity = compute_lighting(point, normal, multiply(-1, direction), closest_sphere.specular, scene);
-    float3 local_color = multiply(intensity, closest_sphere.color);
+    float intensity = ComputeLighting(point, normal, Multiply(-1, direction), closest_sphere.specular, scene);
+    float3 local_color = Multiply(intensity, closest_sphere.color);
 
     // If we hit the recursion limit or the sphere is not reflective, finish
     float reflective = closest_sphere.reflective;
@@ -296,17 +296,17 @@ float3 trace_ray(
     }
 
     // Compute the reflected color
-    float3 reflected_ray = reflect_ray(multiply(-1, direction), normal);
+    float3 reflected_ray = ReflectRay(Multiply(-1, direction), normal);
     // NOTE: Below addresses 'shadow' acne (i.e., flickering shadow), which you
     // can see here: https://imgur.com/a/ycB69zX. To fix this, move the starting
     // point of the reflection ray along the normal, to prevent self-
     // intersection. JS demos don't have this problem because JS uses FP64 by
     // default. Additionally, other spheres don't have this problem because only
     // the biggest radius=5000 one has reflection rays that are near parallel.
-    point = add(point, multiply(EPSILON, normal));
-    const float3 reflected_color = trace_ray(point, reflected_ray, EPSILON, INFINITY, recursion_depth - 1, scene);
+    point = Add(point, Multiply(EPSILON, normal));
+    const float3 reflected_color = TraceRay(point, reflected_ray, EPSILON, INFINITY, recursion_depth - 1, scene);
 
-    return add(multiply(1 - reflective, local_color), multiply(reflective, reflected_color));
+    return Add(Multiply(1 - reflective, local_color), Multiply(reflective, reflected_color));
 }
 
 
@@ -341,9 +341,9 @@ int32_t main() {
     for (int32_t x = -width / 2; x < width / 2; x++) {
         for (int32_t y = -height / 2; y < height / 2; y++)
         {
-            float3 direction = matmul(camera.rotation, canvas_to_viewport(x, y, width, height));
-            float3 color = trace_ray(camera.position, direction, 1, INFINITY, 3, scene);
-            put_pixel(data, width, height, x, y, clamp(color));
+            float3 direction = MultiplyMV(camera.rotation, CanvasToViewport(x, y, width, height));
+            float3 color = TraceRay(camera.position, direction, 1, INFINITY, 3, scene);
+            PutPixel(data, width, height, x, y, Clamp(color));
         }
     }
 

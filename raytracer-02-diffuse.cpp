@@ -23,7 +23,7 @@ typedef std::array<uint8_t, 3> rgb;
 
 // Canvas
 
-bool put_pixel(
+bool PutPixel(
     uint8_t data[][3],
     int32_t width,
     int32_t height,
@@ -52,31 +52,31 @@ bool put_pixel(
 // Linear Algebra
 
 // Compute dot product between two 3d vectors
-float dot_product(float3 v1, float3 v2) {
+float DotProduct(float3 v1, float3 v2) {
     return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
 }
 
 // Length of vector
-float length(float3 vec) {
-    return sqrt(dot_product(vec, vec));
+float Length(float3 vec) {
+    return sqrt(DotProduct(vec, vec));
 }
 
-// Broadcasted multiply between scalar and a vector
-float3 multiply(float k, float3 vec) {
+// Broadcasted Multiply between scalar and a vector
+float3 Multiply(float k, float3 vec) {
     return {k * vec[0], k * vec[1], k * vec[2]};
 }
 
 // Elementwise addition between two 3d vectors
-float3 add(float3 v1, float3 v2) {
+float3 Add(float3 v1, float3 v2) {
     return {v1[0] + v2[0], v1[1] + v2[1], v1[2] + v2[2]};
 }
 
 // Elementwise subtraction between two 3d vectors. First minus second.
-float3 subtract(float3 v1, float3 v2) {
+float3 Subtract(float3 v1, float3 v2) {
     return {v1[0] - v2[0], v1[1] - v2[1], v1[2] - v2[2]};
 }
 
-rgb clamp(float3 vec) {
+rgb Clamp(float3 vec) {
     return {
         (uint8_t) std::round(std::clamp<float>(vec[0], 0, 255)),
         (uint8_t) std::round(std::clamp<float>(vec[1], 0, 255)),
@@ -129,7 +129,7 @@ struct Scene {
 };
 
 // Convert 2d pixel coordinates to 3d viewport coordinates.
-float3 canvas_to_viewport(int32_t x, int32_t y, int32_t width, int32_t height) {
+float3 CanvasToViewport(int32_t x, int32_t y, int32_t width, int32_t height) {
     return { (float) x / width, (float) y / height, 1 };
 }
 
@@ -140,11 +140,11 @@ std::vector<float> intersect_ray_with_sphere(
     float3 direction,
     Sphere sphere
 ) {
-    float3 difference = subtract(origin, sphere.center);
+    float3 difference = Subtract(origin, sphere.center);
 
-    float a = dot_product(direction, direction);
-    float b = 2 * dot_product(difference, direction);
-    float c = dot_product(difference, difference) - sphere.radius * sphere.radius;
+    float a = DotProduct(direction, direction);
+    float b = 2 * DotProduct(difference, direction);
+    float c = DotProduct(difference, difference) - sphere.radius * sphere.radius;
 
     float discriminant = b * b - 4 * a * c;
     if (discriminant < 0) {
@@ -158,10 +158,10 @@ std::vector<float> intersect_ray_with_sphere(
 }
 
 // Compute lighting for the scene
-float compute_lighting(float3 point, float3 normal, std::vector<Light> lights) {
+float ComputeLighting(float3 point, float3 normal, std::vector<Light> lights) {
     float intensity = 0;
-    if (abs(length(normal) - 1) > 0.0001) {
-        std::cerr << "Error: Normal is not length 1 (" << length(normal) << ")" << std::endl;
+    if (abs(Length(normal) - 1) > 0.0001) {
+        std::cerr << "Error: Normal is not length 1 (" << Length(normal) << ")" << std::endl;
         return INFINITY;
     }
 
@@ -172,14 +172,14 @@ float compute_lighting(float3 point, float3 normal, std::vector<Light> lights) {
         } else {
             float3 vec_l;
             if (light.ltype == POINT) {
-                vec_l = subtract(light.position, point);
+                vec_l = Subtract(light.position, point);
             } else {  // Light.DIRECTIONAL
                 vec_l = light.position;
             }
 
-            float n_dot_l = dot_product(normal, vec_l);
+            float n_dot_l = DotProduct(normal, vec_l);
             if (n_dot_l > 0) {
-                intensity += light.intensity * n_dot_l / (length(vec_l));
+                intensity += light.intensity * n_dot_l / (Length(vec_l));
             }
         }
     }
@@ -188,7 +188,7 @@ float compute_lighting(float3 point, float3 normal, std::vector<Light> lights) {
 }
 
 // Traces a ray against the spheres in the scene
-float3 trace_ray(
+float3 TraceRay(
     float3 origin,
     float3 direction,
     float min_t,
@@ -214,12 +214,12 @@ float3 trace_ray(
         return scene.background_color;
     }
 
-    float3 point = add(origin, multiply(closest_t, direction));
-    float3 normal = subtract(point, closest_sphere.center);
-    normal = multiply(1 / length(normal), normal);
+    float3 point = Add(origin, Multiply(closest_t, direction));
+    float3 normal = Subtract(point, closest_sphere.center);
+    normal = Multiply(1 / Length(normal), normal);
 
-    float intensity = compute_lighting(point, normal, scene.lights);
-    return multiply(intensity, closest_sphere.color);
+    float intensity = ComputeLighting(point, normal, scene.lights);
+    return Multiply(intensity, closest_sphere.color);
 }
 
 
@@ -248,9 +248,9 @@ int32_t main() {
     for (int32_t x = -width / 2; x < width / 2; x++) {
         for (int32_t y = -height / 2; y < height / 2; y++)
         {
-            float3 direction = canvas_to_viewport(x, y, width, height);
-            float3 color = trace_ray(camera, direction, 1, INFINITY, scene);
-            put_pixel(data, width, height, x, y, clamp(color));
+            float3 direction = CanvasToViewport(x, y, width, height);
+            float3 color = TraceRay(camera, direction, 1, INFINITY, scene);
+            PutPixel(data, width, height, x, y, Clamp(color));
         }
     }
 
