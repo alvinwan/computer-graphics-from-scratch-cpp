@@ -4,7 +4,7 @@ Raycast 07 - Triangles
 Adds support for triangle primitives to the last demo that "Computer Graphics
 from Scratch" has an implementation for (Raytracer 06).
 
-Timing: 650ms
+Timing: 982ms
 
 ```bash
 g++ raytracer-07-triangles.cpp -o main.out -std=c++20 -Ofast
@@ -484,13 +484,16 @@ int32_t main() {
 
     // Define scene
     std::vector<Sphere> spheres = {
-        Sphere({0, -1, 3}, 1, Material({255, 0, 0}, 500, 0.2)),
-        Sphere({-2, 0, 4}, 1, Material({0, 255, 0}, 10, 0.4)),
-        Sphere({2, 0, 4}, 1, Material({0, 0, 255}, 500, 0.3)),
-        Sphere({0, -5001, 0}, 5000, Material({255, 255, 0}, 1000, 0.5)),
+        Sphere({0, -1, 3}, 0.5, Material({255, 0, 0}, 500, 0.2)),
+        Sphere({-2, 0, 4}, 0.5, Material({0, 255, 0}, 10, 0.4)),
+        Sphere({2, 0, 4}, 0.5, Material({0, 0, 255}, 500, 0.3)),
+        Sphere({0, -5001, 0}, 5000, Material({255, 255, 0}, 1000, 0.5))
     };
     std::vector<Triangle> triangles = {
-        Triangle({2, 0, 6}, {-2, 0, 6}, {0, 2, 4}, Material({0, 255, 255}, 500, 0.4))
+        Triangle({1, -.5, 4}, {-1, -.5, 4}, {0, 1.5, 3}, Material({0, 255, 255}, 500, 0.4)),
+        Triangle({1, -.5, 4}, {0, 1.5, 3}, {0, 1.5, 6}, Material({0, 255, 255}, 500, 0.4)),
+        Triangle({1, -.5, 4}, {-1, -.5, 4}, {0, 1.5, 6}, Material({0, 255, 255}, 500, 0.4)),
+        Triangle({-1, -.5, 4}, {0, 1.5, 3}, {0, 1.5, 6}, Material({0, 255, 255}, 500, 0.4))
     };
 
     std::vector<Light> lights = {

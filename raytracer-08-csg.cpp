@@ -5,7 +5,7 @@ Adds support for constructive solid geometry. Note that porting the compile-time
 polymorphism changes from Raytracer 07 actually slowed down this script. This
 may be because of non-locality in the new Material struct.
 
-Timing: 1.15s
+Timing: 1.08s
 
 ```bash
 g++ raytracer-08-csg.cpp -o main.out -std=c++20 -Ofast
@@ -569,7 +569,6 @@ int32_t main() {
     // Define scene
     std::vector<Object*> objects = {
         new Sphere({0, -5001, 0}, 5000, {255, 255, 0}, 1000, 0.5),
-        new Triangle({2, 0, 6}, {-2, 0, 6}, {0, 2, 4}, {0, 255, 255}, 500, 0.4),
         new CSG(
             new Sphere({-2, 0, 4}, 1, {0, 0, 0}, 0, 0),
             new Sphere({-2, 1, 4}, 1, {0, 0, 0}, 0, 0),
