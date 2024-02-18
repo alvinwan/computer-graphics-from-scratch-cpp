@@ -49,7 +49,7 @@ The C++ implementations below differ slightly from their Javascript counterparts
 > **Note**: The instructions below assume you're in the repository root.
 
 To get started, pick any demo script to build. For example, the first demo for
-raycasting is in `raytracer-01.cpp`. To build and run it, use the following
+raycasting is in `demos/raytracer-01-basic.cpp`. To build and run it, use the following
 
 ```bash
 g++ demos/raytracer-01-basic.cpp -o main.out -std=c++20
