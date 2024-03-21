@@ -9,7 +9,7 @@ Timing: 1.08s
 
 ```bash
 g++ raytracer-08-csg.cpp -o main.out -std=c++20 -Ofast
-./main.out
+OUT=true ./main.out
 open output.bmp
 ```
 

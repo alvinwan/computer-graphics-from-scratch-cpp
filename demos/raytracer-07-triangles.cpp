@@ -8,7 +8,7 @@ Timing: 982ms
 
 ```bash
 g++ raytracer-07-triangles.cpp -o main.out -std=c++20 -Ofast
-./main.out
+OUT=true ./main.out
 open output.bmp
 ```
 

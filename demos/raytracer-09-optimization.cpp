@@ -11,7 +11,7 @@ Timing: 777ms (Reduced from 1.08s, so a 28% speedup)
 
 ```bash
 g++ raytracer-09-optimization.cpp -o main.out -std=c++20 -Ofast
-./main.out
+OUT=true ./main.out
 open output.bmp
 ```
 

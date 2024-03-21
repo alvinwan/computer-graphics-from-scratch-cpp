@@ -8,7 +8,7 @@ JS: ~160ms
 
 ```bash
 g++ raytracer-04-shadow.cpp -o main.out -std=c++20 -Ofast
-./main.out
+OUT=true ./main.out
 open output.bmp
 ```
 
@@ -138,7 +138,7 @@ float3 CanvasToViewport(int32_t x, int32_t y, int32_t width, int32_t height) {
 
 // Computes intersection of ray with spheres. Returns solutions in terms of
 // line parameter t.
-std::vector<float> intersect_ray_with_sphere(
+std::vector<float> IntersectRaySphere(
     float3 origin,
     float3 direction,
     Sphere sphere
@@ -172,7 +172,7 @@ std::tuple<Sphere, float> ClosestIntersection(
     Sphere closest_sphere;
 
     for (int i = 0; i < scene.spheres.size(); i++) {
-        std::vector<float> ts = intersect_ray_with_sphere(origin, direction, scene.spheres[i]);
+        std::vector<float> ts = IntersectRaySphere(origin, direction, scene.spheres[i]);
         if (ts[0] < closest_t && min_t < ts[0] && ts[0] < max_t) {
             closest_t = ts[0];
             closest_sphere = scene.spheres[i];
